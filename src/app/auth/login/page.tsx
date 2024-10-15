@@ -34,7 +34,7 @@ export default function LoginPage() {
             </form>
           </CardContent>
           <CardFooter className="text-center">
-            {/* Rodapé pode ser adicionado aqui */}
+          
           </CardFooter>
         </Card>
       </div>

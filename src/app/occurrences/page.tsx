@@ -8,10 +8,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import Link from "next/link"
 
 export default function OccurrenceManagement() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [occurrences, setOccurrences] = useState([
+    { aluno: "João Silva", data: "2024-06-01", tipo: "Indisciplina", descricao: "Faltou com respeito ao professor." },
+  ])
+  const [editingIndex, setEditingIndex] = useState<number | null>(null) // Estado para controlar qual ocorrência está sendo editada
+
   const [formData, setFormData] = useState({
     aluno: "",
     data: "",
@@ -27,25 +33,51 @@ export default function OccurrenceManagement() {
 
   const handleSubmit = (e: any) => {
     e.preventDefault()
+
     if (formData.tipo === "Indisciplina") {
-      setFormData((prev) => ({
-        ...prev,
-        decisao: "Sugestão: Conversar com o aluno e notificar os responsáveis.",
-      }))
+      formData.decisao = "Sugestão: Conversar com o aluno e notificar os responsáveis."
     } else if (formData.tipo === "Atraso") {
-      setFormData((prev) => ({
-        ...prev,
-        decisao: "Sugestão: Registrar a ocorrência e solicitar justificativa.",
-      }))
+      formData.decisao = "Sugestão: Registrar a ocorrência e solicitar justificativa."
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        decisao: "Sugestão: Avaliar a situação e tomar medidas apropriadas.",
-      }))
+      formData.decisao = "Sugestão: Avaliar a situação e tomar medidas apropriadas."
     }
+
+    if (editingIndex !== null) {
+      // Editar a ocorrência existente
+      setOccurrences((prev) => {
+        const updated = [...prev]
+        updated[editingIndex] = { ...formData }
+        return updated
+      })
+    } else {
+      // Adicionar uma nova ocorrência
+      setOccurrences((prev) => [...prev, { ...formData }])
+    }
+
     alert("Ocorrência salva com a sugestão de decisão: " + formData.decisao)
-    // Aqui, enviar os dados para o backend
+
+
+    setFormData({
+      aluno: "",
+      data: "",
+      tipo: "",
+      descricao: "",
+      decisao: "",
+    })
     setIsAddModalOpen(false)
+    setIsEditModalOpen(false)
+    setEditingIndex(null)
+  }
+
+  const handleEdit = (index: number) => {
+    setEditingIndex(index)
+    const occurrence = occurrences[index]
+    setFormData({ ...occurrence }) 
+    setIsEditModalOpen(true)
+  }
+
+  const handleDelete = (index: number) => {
+    setOccurrences((prev) => prev.filter((_, i) => i !== index))
   }
 
   return (
@@ -57,10 +89,12 @@ export default function OccurrenceManagement() {
               Sistema de Ocorrências
             </a>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" href="/dashboard">
-                Dashboard
+              <Button asChild>
+                <Link href="/dashboard">Dashboard</Link>
               </Button>
-              <Button>Logout</Button>
+              <Button asChild>
+                <Link href="/">Logout</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -72,27 +106,7 @@ export default function OccurrenceManagement() {
           <Button onClick={() => setIsAddModalOpen(true)}>Adicionar Ocorrência</Button>
         </div>
 
-        {/* Filtros */}
-        <form className="flex flex-wrap gap-4 mb-4">
-          <Input
-            placeholder="Aluno"
-            name="filterAluno"
-            className="w-full sm:w-auto"
-          />
-          <Input
-            type="date"
-            name="filterData"
-            className="w-full sm:w-auto"
-          />
-          <Input
-            placeholder="Tipo de Indisciplina"
-            name="filterTipo"
-            className="w-full sm:w-auto"
-          />
-          <Button variant="secondary">Filtrar</Button>
-        </form>
-
-        {/* Tabela de Ocorrências */}
+   
         <Card>
           <CardHeader>
             <h3 className="font-semibold text-lg">Ocorrências</h3>
@@ -109,27 +123,35 @@ export default function OccurrenceManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell>João Silva</TableCell>
-                  <TableCell>2024-06-01</TableCell>
-                  <TableCell>Indisciplina</TableCell>
-                  <TableCell>Faltou com respeito ao professor.</TableCell>
-                  <TableCell>
-                    <Button variant="info" size="sm" onClick={() => setIsEditModalOpen(true)}>Editar</Button>
-                    <Button variant="destructive" size="sm">Excluir</Button>
-                  </TableCell>
-                </TableRow>
+                {occurrences.map((occurrence, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{occurrence.aluno}</TableCell>
+                    <TableCell>{occurrence.data}</TableCell>
+                    <TableCell>{occurrence.tipo}</TableCell>
+                    <TableCell>{occurrence.descricao}</TableCell>
+                    <TableCell>
+                      <Button variant="info" size="sm" onClick={() => handleEdit(index)}>Editar</Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(index)}>Excluir</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       </div>
 
-      {/* Modal Adicionar Ocorrência */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+    
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsAddModalOpen(false)
+          setIsEditModalOpen(false)
+          setEditingIndex(null) 
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Adicionar Ocorrência</DialogTitle>
+            <DialogTitle>{editingIndex !== null ? "Editar Ocorrência" : "Adicionar Ocorrência"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
@@ -183,19 +205,9 @@ export default function OccurrenceManagement() {
                   disabled
                 />
               </div>
-              <Button type="submit">Salvar</Button>
+              <Button type="submit">{editingIndex !== null ? "Salvar Alterações" : "Salvar"}</Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Editar Ocorrência */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Ocorrência</DialogTitle>
-          </DialogHeader>
-          {/* Formulário similar ao de adicionar */}
         </DialogContent>
       </Dialog>
     </div>

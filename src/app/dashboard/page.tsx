@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { Bar, Pie } from "react-chartjs-2"
+import Link from "next/link"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,7 +18,7 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
 
 export default function Dashboard() {
-  // Dados do gráfico de barras
+
   const barData = {
     labels: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio"],
     datasets: [
@@ -53,7 +54,10 @@ export default function Dashboard() {
               </a>
             </div>
             <div className="flex items-center">
-              <Button className="ml-4">Logout</Button>
+            <Button asChild>
+  <Link href="/">Logout</Link>
+</Button>
+              
             </div>
           </div>
         </div>
@@ -61,7 +65,7 @@ export default function Dashboard() {
 
       <div className="container mx-auto mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Ocorrências Recentes */}
+       
           <Card>
             <CardHeader>
               <h3 className="font-semibold text-lg">Ocorrências Recentes</h3>
@@ -76,7 +80,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Gráficos */}
+    
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
@@ -103,7 +107,9 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Button className="w-full">Adicionar Ocorrência</Button>
+                <Button asChild>
+  <Link href="/occurrences">Adicionar Ocorrência</Link>
+</Button>
                   <Button variant="secondary" className="w-full">
                     Gerenciar Usuários
                   </Button>

@@ -74,7 +74,7 @@ export default function Reports() {
           <h2 className="text-xl font-semibold">Relatórios de Ocorrências</h2>
         </div>
 
-        {/* Filtro */}
+    
         <form className="flex space-x-4 mb-6" onSubmit={handleSubmit}>
           <Input
             type="text"
@@ -105,7 +105,7 @@ export default function Reports() {
           </Button>
         </form>
 
-        {/* Tabela de Ocorrências */}
+     
         <Card>
           <CardHeader>
             <h3 className="font-semibold text-lg">Ocorrências</h3>
@@ -127,13 +127,13 @@ export default function Reports() {
                   <TableCell>Indisciplina</TableCell>
                   <TableCell>Faltou com respeito ao professor.</TableCell>
                 </TableRow>
-                {/* Outras linhas de ocorrências */}
+              
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
-        {/* Gráfico de Ocorrências */}
+   
         <div className="mt-8">
           <h3 className="text-lg font-semibold mb-4">Gráfico de Ocorrências</h3>
           <Bar data={data} options={options} />

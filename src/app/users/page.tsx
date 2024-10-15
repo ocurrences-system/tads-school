@@ -85,7 +85,7 @@ export default function UserManagement() {
         </Card>
       </div>
 
-      {/* Modal Adicionar Usuário */}
+
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -150,7 +150,7 @@ export default function UserManagement() {
           <DialogHeader>
             <DialogTitle>Editar Usuário</DialogTitle>
           </DialogHeader>
-          {/* Formulário similar ao de adicionar */}
+        
         </DialogContent>
       </Dialog>
     </div>

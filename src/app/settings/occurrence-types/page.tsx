@@ -120,7 +120,7 @@ export default function OccurrenceTypes() {
           </Dialog>
         </div>
 
-        {/* Tabela de Tipos de Ocorrências */}
+      
         <Card>
           <CardHeader>
             <h3 className="font-semibold text-lg">Tipos de Ocorrências</h3>
@@ -185,13 +185,13 @@ export default function OccurrenceTypes() {
                     </Button>
                   </TableCell>
                 </TableRow>
-                {/* Outras linhas de tipos de ocorrências */}
+              
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
-        {/* Gráfico de Estatísticas */}
+      
         <div className="mt-8">
           <h3 className="text-lg font-semibold mb-4">Estatísticas</h3>
           <Bar data={data} options={options} />
