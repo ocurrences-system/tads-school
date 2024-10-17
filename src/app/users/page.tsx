@@ -1,158 +1,98 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardHeader, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button"; // Ajuste de caminho se necessário
+import { Card, CardHeader, CardContent } from "@/components/ui/card"; // Ajuste de caminho se necessário
+import { Label } from "@/components/ui/label"; // Ajuste de caminho se necessário
+import { Input } from "@/components/ui/input"; // Ajuste de caminho se necessário
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"; // Ajuste de caminho se necessário
+import { toast } from "sonner"; // Ajuste de caminho se necessário
 
-export default function UserManagement() {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    funcao: "Professor",
-    senha: "",
-  })
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  const handleFormChange = (e: any) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+export default function PerfilAluno() {
+  const [studentData, setStudentData] = useState<any>(null); // Novo estado para os dados do aluno
+  const [occurrences, setOccurrences] = useState<any[]>([]);
+  const [chartInstance, setChartInstance] = useState<Chart | null>(null);
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault()
-    alert("Usuário salvo: " + JSON.stringify(formData))
-    setIsAddModalOpen(false)
-  }
+  const fetchOccurrences = async () => {
+    try {
+      const response = await fetch(`${API_URL}/occurrences`);
+      if (!response.ok) throw new Error("Erro ao buscar ocorrências");
+      const data = await response.json();
+      setOccurrences(data);
+    } catch (error) {
+      console.error("Erro ao buscar ocorrências:", error);
+      toast.error("Erro ao buscar ocorrências.");
+    }
+  };
+
+  const fetchStudentData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/users`); // Ajuste a URL conforme necessário
+      if (!response.ok) throw new Error("Erro ao buscar dados do aluno");
+      const data = await response.json();
+      setStudentData(data);
+    } catch (error) {
+      console.error("Erro ao buscar dados do aluno:", error);
+      toast.error("Erro ao buscar dados do aluno.");
+    }
+  };
+
+  useEffect(() => {
+    fetchOccurrences();
+    fetchStudentData();
+
+    // (Código do gráfico se necessário)
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="relative flex items-center justify-between h-16">
-            <a href="#" className="text-lg font-bold">
-              Sistema de Ocorrências
+      <nav className="bg-white shadow-md p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <span className="text-2xl font-semibold text-gray-800">
+            Sistema de Ocorrências
+          </span>
+          <div className="flex space-x-4">
+            <a className="text-lg text-blue-500 hover:text-blue-700" href="#">
+              Dashboard
             </a>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" href="/dashboard">
-                Dashboard
-              </Button>
-              <Button>Logout</Button>
-            </div>
+            <a className="text-lg text-blue-500 hover:text-blue-700" href="#">
+              Logout
+            </a>
           </div>
         </div>
       </nav>
 
       <div className="container mx-auto mt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Gerenciamento de Usuários</h2>
-          <Button onClick={() => setIsAddModalOpen(true)}>Adicionar Usuário</Button>
-        </div>
-
-        {/* Tabela de Usuários */}
-        <Card>
-          <CardHeader>
-            <h3 className="font-semibold text-lg">Usuários</h3>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Função</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell>Maria Oliveira</TableCell>
-                  <TableCell>maria@escola.com</TableCell>
-                  <TableCell>Professor</TableCell>
-                  <TableCell>
-                    <Button variant="info" size="sm" onClick={() => setIsEditModalOpen(true)}>Editar</Button>
-                    <Button variant="destructive" size="sm">Excluir</Button>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adicionar Usuário</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  placeholder="Nome do Usuário"
-                  name="nome"
-                  onChange={handleFormChange}
-                  value={formData.nome}
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  name="email"
-                  onChange={handleFormChange}
-                  value={formData.email}
-                />
-              </div>
-              <div>
-                <Label htmlFor="funcao">Função</Label>
-                <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, funcao: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma função" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Administrador">Administrador</SelectItem>
-                    <SelectItem value="Professor">Professor</SelectItem>
-                    <SelectItem value="Pedagógico">Pedagógico</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="senha">Senha</Label>
-                <Input
-                  id="senha"
-                  type="password"
-                  placeholder="Senha"
-                  name="senha"
-                  onChange={handleFormChange}
-                  value={formData.senha}
-                />
-              </div>
-              <Button type="submit">Salvar</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Editar Usuário */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
-          </DialogHeader>
+        <h2 className="text-xl font-semibold mb-4">Perfil do Aluno</h2>
         
-        </DialogContent>
-      </Dialog>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white shadow-lg rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-4 text-gray-700">
+              Dados Pessoais
+            </h3>
+            {studentData ? (
+              <>
+                <p className="mb-2">
+                  <strong>Nome:</strong> {studentData.nome}
+                </p>
+                <p className="mb-2">
+                  <strong>Data de Nascimento:</strong> {studentData.dataNascimento}
+                </p>
+                <p className="mb-2">
+                  <strong>Turma:</strong> {studentData.turma}
+                </p>
+                <p className="mb-2">
+                  <strong>Email:</strong> {studentData.email}
+                </p>
+              </>
+            ) : (
+              <p className="mb-2">Carregando dados do aluno...</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }

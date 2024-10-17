@@ -1,84 +1,138 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardHeader, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import Link from "next/link"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import Link from "next/link";
+
+interface Occurrence {
+  id: number;
+  aluno: string;
+  data: string;
+  tipo: string;
+  descricao: string;
+  decisao: string;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function OccurrenceManagement() {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [occurrences, setOccurrences] = useState([
-    { aluno: "João Silva", data: "2024-06-01", tipo: "Indisciplina", descricao: "Faltou com respeito ao professor." },
-  ])
-  const [editingIndex, setEditingIndex] = useState<number | null>(null) // Estado para controlar qual ocorrência está sendo editada
-
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [formData, setFormData] = useState({
     aluno: "",
     data: "",
-    tipo: "",
+    tipo: "Indisciplina",
     descricao: "",
     decisao: "",
-  })
+  });
+  const [editOccurrenceId, setEditOccurrenceId] = useState<number | null>(null);
 
-  const handleFormChange = (e: any) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  useEffect(() => {
+    fetchOccurrences();
+  }, []);
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault()
-
-    if (formData.tipo === "Indisciplina") {
-      formData.decisao = "Sugestão: Conversar com o aluno e notificar os responsáveis."
-    } else if (formData.tipo === "Atraso") {
-      formData.decisao = "Sugestão: Registrar a ocorrência e solicitar justificativa."
-    } else {
-      formData.decisao = "Sugestão: Avaliar a situação e tomar medidas apropriadas."
+  const fetchOccurrences = async () => {
+    try {
+      console.log("Fetching occurrences from API...");
+      const response = await fetch(`${API_URL}/occurrences`);
+      if (!response.ok) throw new Error("Erro ao buscar ocorrências");
+      const data = await response.json();
+      setOccurrences(data);
+      console.log("Occurrences fetched successfully:", data);
+    } catch (error) {
+      console.error("Erro ao buscar ocorrências:", error);
+      toast.error("Erro ao buscar ocorrências.");
     }
+  };
 
-    if (editingIndex !== null) {
-      // Editar a ocorrência existente
-      setOccurrences((prev) => {
-        const updated = [...prev]
-        updated[editingIndex] = { ...formData }
-        return updated
-      })
-    } else {
-      // Adicionar uma nova ocorrência
-      setOccurrences((prev) => [...prev, { ...formData }])
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddOccurrence = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("Attempting to add occurrence:", formData);
+    try {
+      const response = await fetch(`${API_URL}/occurrences`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error(`Erro na requisição: ${response.statusText}`);
+
+      const newOccurrence = await response.json();
+      setOccurrences((prevOccurrences) => [...prevOccurrences, newOccurrence]);
+      toast.success("Ocorrência adicionada com sucesso!");
+      setIsAddModalOpen(false);
+      setFormData({ aluno: "", data: "", tipo: "Indisciplina", descricao: "", decisao: "" });
+      console.log("Occurrence added successfully:", newOccurrence);
+    } catch (error) {
+      console.error("Erro ao adicionar ocorrência:", error);
+      toast.error("Erro ao adicionar ocorrência.");
     }
+  };
 
-    alert("Ocorrência salva com a sugestão de decisão: " + formData.decisao)
+  const handleEditOccurrence = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (editOccurrenceId === null) return;
 
+    console.log("Attempting to edit occurrence:", { ...formData, id: editOccurrenceId });
+    try {
+      const response = await fetch(`${API_URL}/occurrences/${editOccurrenceId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...formData, id: editOccurrenceId }),
+      });
 
-    setFormData({
-      aluno: "",
-      data: "",
-      tipo: "",
-      descricao: "",
-      decisao: "",
-    })
-    setIsAddModalOpen(false)
-    setIsEditModalOpen(false)
-    setEditingIndex(null)
-  }
+      if (!response.ok) throw new Error(`Erro na requisição: ${response.statusText}`);
 
-  const handleEdit = (index: number) => {
-    setEditingIndex(index)
-    const occurrence = occurrences[index]
-    setFormData({ ...occurrence }) 
-    setIsEditModalOpen(true)
-  }
+      const updatedOccurrence = await response.json();
+      setOccurrences((prevOccurrences) =>
+        prevOccurrences.map((occurrence) => (occurrence.id === editOccurrenceId ? updatedOccurrence : occurrence))
+      );
+      toast.success("Ocorrência editada com sucesso!");
+      setIsEditModalOpen(false);
+      setFormData({ aluno: "", data: "", tipo: "Indisciplina", descricao: "", decisao: "" });
+      setEditOccurrenceId(null);
+      console.log("Occurrence edited successfully:", updatedOccurrence);
+    } catch (error) {
+      console.error("Erro ao editar ocorrência:", error);
+      toast.error("Erro ao editar ocorrência.");
+    }
+  };
 
-  const handleDelete = (index: number) => {
-    setOccurrences((prev) => prev.filter((_, i) => i !== index))
-  }
+  const handleDeleteOccurrence = async (occurrenceId: number) => {
+    if (confirm("Você tem certeza que deseja excluir esta ocorrência?")) {
+      try {
+        console.log("Attempting to delete occurrence:", occurrenceId);
+        const response = await fetch(`${API_URL}/occurrences/${occurrenceId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) throw new Error(`Erro na requisição: ${response.statusText}`);
+
+        setOccurrences((prevOccurrences) => prevOccurrences.filter((occurrence) => occurrence.id !== occurrenceId));
+        toast.success("Ocorrência excluída com sucesso!");
+        console.log("Occurrence deleted successfully:", occurrenceId);
+      } catch (error) {
+        console.error("Erro ao excluir ocorrência:", error);
+        toast.error("Erro ao excluir ocorrência.");
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -106,7 +160,6 @@ export default function OccurrenceManagement() {
           <Button onClick={() => setIsAddModalOpen(true)}>Adicionar Ocorrência</Button>
         </div>
 
-   
         <Card>
           <CardHeader>
             <h3 className="font-semibold text-lg">Ocorrências</h3>
@@ -119,19 +172,39 @@ export default function OccurrenceManagement() {
                   <TableHead>Data</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Descrição</TableHead>
+                  <TableHead>Decisão</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {occurrences.map((occurrence, index) => (
-                  <TableRow key={index}>
+                {occurrences.map((occurrence) => (
+                  <TableRow key={occurrence.id}>
                     <TableCell>{occurrence.aluno}</TableCell>
                     <TableCell>{occurrence.data}</TableCell>
                     <TableCell>{occurrence.tipo}</TableCell>
                     <TableCell>{occurrence.descricao}</TableCell>
+                    <TableCell>{occurrence.decisao}</TableCell>
                     <TableCell>
-                      <Button variant="info" size="sm" onClick={() => handleEdit(index)}>Editar</Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDelete(index)}>Excluir</Button>
+                      <Button
+                        variant="info"
+                        size="sm"
+                        onClick={() => {
+                          setFormData({
+                            aluno: occurrence.aluno,
+                            data: occurrence.data,
+                            tipo: occurrence.tipo,
+                            descricao: occurrence.descricao,
+                            decisao: occurrence.decisao,
+                          });
+                          setEditOccurrenceId(occurrence.id);
+                          setIsEditModalOpen(true);
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDeleteOccurrence(occurrence.id)}>
+                        Excluir
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -141,19 +214,13 @@ export default function OccurrenceManagement() {
         </Card>
       </div>
 
-    
-      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddModalOpen(false)
-          setIsEditModalOpen(false)
-          setEditingIndex(null) 
-        }
-      }}>
+   
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingIndex !== null ? "Editar Ocorrência" : "Adicionar Ocorrência"}</DialogTitle>
+            <DialogTitle>Adicionar Ocorrência</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleAddOccurrence}>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="aluno">Aluno</Label>
@@ -163,23 +230,24 @@ export default function OccurrenceManagement() {
                   name="aluno"
                   onChange={handleFormChange}
                   value={formData.aluno}
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="data">Data</Label>
                 <Input
-                  type="date"
                   id="data"
+                  type="date"
                   name="data"
                   onChange={handleFormChange}
                   value={formData.data}
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="tipo">Tipo</Label>
                 <Input
                   id="tipo"
-                  placeholder="Tipo de Indisciplina"
                   name="tipo"
                   onChange={handleFormChange}
                   value={formData.tipo}
@@ -187,29 +255,98 @@ export default function OccurrenceManagement() {
               </div>
               <div>
                 <Label htmlFor="descricao">Descrição</Label>
-                <Textarea
+                <Input
                   id="descricao"
-                  placeholder="Descrição"
+                  placeholder="Descrição da Ocorrência"
                   name="descricao"
                   onChange={handleFormChange}
                   value={formData.descricao}
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="decisao">Sugestão de Tomada de Decisão</Label>
-                <Textarea
+                <Label htmlFor="decisao">Decisão</Label>
+                <Input
                   id="decisao"
-                  placeholder="Sugestão de Tomada de Decisão"
+                  placeholder="Decisão tomada"
                   name="decisao"
+                  onChange={handleFormChange}
                   value={formData.decisao}
-                  disabled
+                  required
                 />
               </div>
-              <Button type="submit">{editingIndex !== null ? "Salvar Alterações" : "Salvar"}</Button>
+              <Button type="submit">Adicionar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+     
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Ocorrência</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditOccurrence}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="aluno">Aluno</Label>
+                <Input
+                  id="aluno"
+                  placeholder="Nome do Aluno"
+                  name="aluno"
+                  onChange={handleFormChange}
+                  value={formData.aluno}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="data">Data</Label>
+                <Input
+                  id="data"
+                  type="date"
+                  name="data"
+                  onChange={handleFormChange}
+                  value={formData.data}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="tipo">Tipo</Label>
+                <Input
+                  id="tipo"
+                  name="tipo"
+                  onChange={handleFormChange}
+                  value={formData.tipo}
+                />
+              </div>
+              <div>
+                <Label htmlFor="descricao">Descrição</Label>
+                <Input
+                  id="descricao"
+                  placeholder="Descrição da Ocorrência"
+                  name="descricao"
+                  onChange={handleFormChange}
+                  value={formData.descricao}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="decisao">Decisão</Label>
+                <Input
+                  id="decisao"
+                  placeholder="Decisão tomada"
+                  name="decisao"
+                  onChange={handleFormChange}
+                  value={formData.decisao}
+                  required
+                />
+              </div>
+              <Button type="submit">Salvar</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

@@ -110,9 +110,9 @@ export default function Dashboard() {
                 <Button asChild>
   <Link href="/occurrences">Adicionar Ocorrência</Link>
 </Button>
-                  <Button variant="secondary" className="w-full">
-                    Gerenciar Usuários
-                  </Button>
+<Button asChild>
+  <Link href="/users">Gerenciar usuários</Link>
+</Button>
                   <Button variant="warning" className="w-full">
                     Backup de Dados
                   </Button>

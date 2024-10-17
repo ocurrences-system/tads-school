@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "server": "json-server --watch db.json --port 3001"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",
@@ -19,9 +20,11 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.451.0",
     "next": "14.2.15",
+    "next-themes": "^0.3.0",
     "react": "^18",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18",
+    "sonner": "^1.5.0",
     "tads-school": "file:",
     "tailwind-merge": "^2.5.3",
     "tailwindcss-animate": "^1.0.7"

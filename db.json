@@ -1,0 +1,30 @@
+{
+  "users": [
+    {
+      "id": "bae2",
+      "nome": "Victor Lara",
+      "email": "victordxloko1@hotmail.com",
+      "funcao": "Professor",
+      "senha": "1234"
+    }
+  ],
+  "students": [
+    {
+      "id": "1",
+      "nome": "João Silva",
+      "email": "joao.silva@escola.com",
+      "turma": "9º Ano B",
+      "data_nascimento": "2005-01-01"
+    }
+  ],
+  "occurrences": [
+    {
+      "id": "ef9d",
+      "aluno": "Victor Lara",
+      "data": "2024-10-17",
+      "tipo": "Indisciplina",
+      "descricao": "Falta de respeito",
+      "decisao": "Falar com os pais"
+    }
+  ]
+}
