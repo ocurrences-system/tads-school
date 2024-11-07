@@ -165,7 +165,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Button onClick={() => setIsAddModalOpen(true)}>Adicionar Ocorrência</Button>
                   <Button asChild>
-                    <Link href="/users">Gerenciar usuários</Link>
+                    <Link href="/profiles/student">Gerenciar Alunos</Link>
                   </Button>
                   <Button asChild>
                     <Link href="/db">Gerenciar Dados</Link>
