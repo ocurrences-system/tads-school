@@ -111,7 +111,7 @@ export default function Dashboard() {
   <Link href="/occurrences">Adicionar Ocorrência</Link>
 </Button>
 <Button asChild>
-  <Link href="/users">Gerenciar usuários</Link>
+  <Link href="/profiles/student">Gerenciar alunos</Link>
 </Button>
                   <Button variant="warning" className="w-full">
                     Backup de Dados

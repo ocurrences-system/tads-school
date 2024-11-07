@@ -15,11 +15,17 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(""); // Limpar erro antes de tentar logar
 
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_JSON_SERVER_URL}/users?email=${login}&senha=${password}`
       );
+
+      if (!response.ok) {
+        throw new Error("Falha na requisição ao servidor.");
+      }
+
       const data = await response.json();
 
       if (data.length > 0) {
