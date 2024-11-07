@@ -1,12 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button"; // Ajuste de caminho se necessário
-import { Card, CardHeader, CardContent } from "@/components/ui/card"; // Ajuste de caminho se necessário
-import { Label } from "@/components/ui/label"; // Ajuste de caminho se necessário
-import { Input } from "@/components/ui/input"; // Ajuste de caminho se necessário
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"; // Ajuste de caminho se necessário
-import { toast } from "sonner"; // Ajuste de caminho se necessário
+import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -48,18 +45,20 @@ export default function PerfilAluno() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-md p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <span className="text-2xl font-semibold text-gray-800">
-            Sistema de Ocorrências
-          </span>
-          <div className="flex space-x-4">
-            <a className="text-lg text-blue-500 hover:text-blue-700" href="#">
-              Dashboard
+      <nav className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+          <div className="relative flex items-center justify-between h-16">
+            <a href="#" className="text-lg font-bold">
+              Sistema de Ocorrências
             </a>
-            <a className="text-lg text-blue-500 hover:text-blue-700" href="#">
-              Logout
-            </a>
+            <div className="flex items-center space-x-4">
+              <Button asChild>
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/">Logout</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </nav>

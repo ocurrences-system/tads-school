@@ -1,8 +1,13 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { Bar, Pie } from "react-chartjs-2"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 import Link from "next/link"
 import {
   Chart as ChartJS,
@@ -18,6 +23,59 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement)
 
 export default function Dashboard() {
+  const [ocorrencias, setOcorrencias] = useState([])
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [formData, setFormData] = useState({
+    aluno: "",
+    data: "",
+    tipo: "Indisciplina",
+    descricao: "",
+    decisao: "",
+  })
+
+  // Função para carregar as ocorrências do JSON
+  useEffect(() => {
+    const fetchOcorrencias = async () => {
+      try {
+        const response = await fetch("http://localhost:3001/occurrences")
+        const data = await response.json()
+        setOcorrencias(data)
+      } catch (error) {
+        console.error("Erro ao carregar as ocorrências:", error)
+      }
+    }
+
+    fetchOcorrencias()
+  }, [])
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleAddOccurrence = async (e) => {
+    e.preventDefault()
+    try {
+      const response = await fetch("http://localhost:3001/occurrences", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) throw new Error(`Erro na requisição: ${response.statusText}`)
+
+      const newOccurrence = await response.json()
+      setOcorrencias((prev) => [...prev, newOccurrence])
+      toast.success("Ocorrência adicionada com sucesso!")
+      setIsAddModalOpen(false)
+      setFormData({ aluno: "", data: "", tipo: "Indisciplina", descricao: "", decisao: "" })
+    } catch (error) {
+      console.error("Erro ao adicionar ocorrência:", error)
+      toast.error("Erro ao adicionar ocorrência.")
+    }
+  }
 
   const barData = {
     labels: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio"],
@@ -54,10 +112,9 @@ export default function Dashboard() {
               </a>
             </div>
             <div className="flex items-center">
-            <Button asChild>
-  <Link href="/">Logout</Link>
-</Button>
-              
+              <Button asChild>
+                <Link href="/">Logout</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -65,22 +122,22 @@ export default function Dashboard() {
 
       <div className="container mx-auto mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-       
           <Card>
             <CardHeader>
               <h3 className="font-semibold text-lg">Ocorrências Recentes</h3>
             </CardHeader>
             <CardContent>
               <ul className="list-disc pl-5">
-                <li>Ocorrência 1</li>
-                <li>Ocorrência 2</li>
-                <li>Ocorrência 3</li>
+                {ocorrencias.slice(0, 5).map((ocorrencia) => (
+                  <li key={ocorrencia.id}>
+                    {ocorrencia.aluno} - {ocorrencia.tipo}: {ocorrencia.descricao}
+                  </li>
+                ))}
               </ul>
-              <Button className="mt-4 w-full">Gerenciar Ocorrências</Button>
+              <Button className="mt-4 w-full"><Link href="/occurrences">Gerenciar Ocorrências</Link></Button>
             </CardContent>
           </Card>
 
-    
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
@@ -99,7 +156,6 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Acesso Rápido */}
           <div className="lg:col-span-3">
             <Card>
               <CardHeader>
@@ -107,22 +163,89 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Button asChild>
-  <Link href="/occurrences">Adicionar Ocorrência</Link>
-</Button>
-<Button asChild>
-  <Link href="/profiles/student">Gerenciar alunos</Link>
-</Button>
-                  <Button variant="warning" className="w-full">
-                    Backup de Dados
+                  <Button onClick={() => setIsAddModalOpen(true)}>Adicionar Ocorrência</Button>
+                  <Button asChild>
+                    <Link href="/users">Gerenciar usuários</Link>
                   </Button>
-                  <Button className="w-full">Gerenciar Sugestões</Button>
+                  <Button asChild>
+                    <Link href="/db">Gerenciar Dados</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/sugestions">Gerenciar Sugestões</Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* Modal de Adição de Ocorrência */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Ocorrência</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddOccurrence}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="aluno">Aluno</Label>
+                <Input
+                  id="aluno"
+                  placeholder="Nome do Aluno"
+                  name="aluno"
+                  onChange={handleFormChange}
+                  value={formData.aluno}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="data">Data</Label>
+                <Input
+                  id="data"
+                  type="date"
+                  name="data"
+                  onChange={handleFormChange}
+                  value={formData.data}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="tipo">Tipo</Label>
+                <Input
+                  id="tipo"
+                  name="tipo"
+                  onChange={handleFormChange}
+                  value={formData.tipo}
+                />
+              </div>
+              <div>
+                <Label htmlFor="descricao">Descrição</Label>
+                <Input
+                  id="descricao"
+                  placeholder="Descrição da Ocorrência"
+                  name="descricao"
+                  onChange={handleFormChange}
+                  value={formData.descricao}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="decisao">Decisão</Label>
+                <Input
+                  id="decisao"
+                  placeholder="Decisão tomada"
+                  name="decisao"
+                  onChange={handleFormChange}
+                  value={formData.decisao}
+                  required
+                />
+              </div>
+              <Button type="submit">Adicionar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
