@@ -33,7 +33,7 @@ export default function Dashboard() {
     decisao: "",
   })
 
-  // Função para carregar as ocorrências do JSON
+
   useEffect(() => {
     const fetchOcorrencias = async () => {
       try {
@@ -47,6 +47,18 @@ export default function Dashboard() {
 
     fetchOcorrencias()
   }, [])
+
+  
+  const getMonthlyOccurrences = () => {
+    const monthlyCounts = Array(12).fill(0)
+
+    ocorrencias.forEach((ocorrencia) => {
+      const month = new Date(ocorrencia.data).getMonth() // Obtém o mês (0 = Janeiro, 11 = Dezembro)
+      monthlyCounts[month] += 1
+    })
+
+    return monthlyCounts
+  }
 
   const handleFormChange = (e) => {
     const { name, value } = e.target
@@ -78,11 +90,11 @@ export default function Dashboard() {
   }
 
   const barData = {
-    labels: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio"],
+    labels: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"],
     datasets: [
       {
         label: "Ocorrências",
-        data: [12, 19, 3, 5, 2],
+        data: getMonthlyOccurrences(), // Usa a função para obter os dados mensais
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         borderColor: "rgba(75, 192, 192, 1)",
         borderWidth: 1,
