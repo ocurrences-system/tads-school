@@ -18,37 +18,37 @@
     }
   ],
   "occurrences": [
-    {
-      "id": "af2e",
-      "aluno": "teste",
-      "data": "2024-10-03",
-      "tipo": "Indisciplina",
-      "descricao": "aa",
-      "decisao": "aa"
-    },
-    {
-      "id": "aaa6",
-      "aluno": "teste modal",
-      "data": "2024-10-28",
-      "tipo": "Indisciplina",
-      "descricao": "teste",
-      "decisao": "modal"
-    },
-    {
-      "id": "c42c",
-      "aluno": "a",
-      "data": "2024-10-28",
-      "tipo": "Indisciplina",
-      "descricao": "a",
-      "decisao": "a"
-    },
-    {
-      "id": "a2df",
-      "aluno": "aa",
-      "data": "2024-10-28",
-      "tipo": "Indisciplina",
-      "descricao": "aa",
-      "decisao": "aa"
-    }
-  ]
+  {
+    "id": "af2e",
+    "aluno": "João Silva",
+    "data": "2024-10-03",
+    "tipo": "Indisciplina",
+    "descricao": "Interrompeu a aula diversas vezes falando alto.",
+    "decisao": "Advertência verbal aplicada pelo professor."
+  },
+  {
+    "id": "aaa6",
+    "aluno": "Maria Oliveira",
+    "data": "2024-10-10",
+    "tipo": "Falta de Tarefa",
+    "descricao": "Não entregou a tarefa de matemática pela terceira vez consecutiva.",
+    "decisao": "Notificação enviada aos responsáveis."
+  },
+  {
+    "id": "c42c",
+    "aluno": "Carlos Santos",
+    "data": "2024-10-15",
+    "tipo": "Agressão",
+    "descricao": "Empurrou um colega durante o intervalo.",
+    "decisao": "Encaminhado para a coordenação e suspenso por 2 dias."
+  },
+  {
+    "id": "a2df",
+    "aluno": "Ana Paula",
+    "data": "2024-10-20",
+    "tipo": "Uso Inadequado de Celular",
+    "descricao": "Foi flagrada usando o celular durante a prova.",
+    "decisao": "Celular recolhido e informado aos responsáveis."
+  }
+]
 }

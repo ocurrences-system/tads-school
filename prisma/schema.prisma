@@ -1,0 +1,40 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id     String @id @default(cuid())
+  nome   String
+  email  String @unique
+  funcao String
+  senha  String
+
+  occurrences Occurrence[]
+}
+
+model Student {
+  id              String   @id @default(cuid())
+  nome            String
+  email           String   @unique
+  turma           String
+  data_nascimento DateTime
+
+  occurrences Occurrence[]
+}
+
+model Occurrence {
+  id        String   @id @default(cuid())
+  alunoId   String
+  aluno     Student  @relation(fields: [alunoId], references: [id])
+  usuarioId String
+  usuario   User     @relation(fields: [usuarioId], references: [id])
+  data      DateTime
+  tipo      String
+  descricao String
+  decisao   String
+}

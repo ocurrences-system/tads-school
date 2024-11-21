@@ -10,6 +10,7 @@
     "server": "json-server --watch db.json --port 3001"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-icons": "^1.3.0",
     "@radix-ui/react-label": "^2.1.0",
@@ -25,6 +26,7 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18",
     "sonner": "^1.5.0",
+    "sqlite3": "^5.1.7",
     "tads-school": "file:",
     "tailwind-merge": "^2.5.3",
     "tailwindcss-animate": "^1.0.7"
@@ -36,6 +38,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.15",
     "postcss": "^8",
+    "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
