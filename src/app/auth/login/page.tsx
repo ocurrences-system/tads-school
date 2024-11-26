@@ -15,14 +15,12 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Limpar erro antes de tentar logar
+    setError("");
 
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: login, senha: password }),
       });
 
@@ -34,7 +32,6 @@ export default function LoginPage() {
       const user = await response.json();
       console.log("Usuário autenticado:", user);
 
-      // Redirecionar para o dashboard
       router.push("/dashboard");
     } catch (err: any) {
       console.error("Erro ao fazer login:", err.message);
@@ -43,11 +40,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
+      <div className="w-full max-w-md p-6 bg-white rounded-xl shadow-2xl">
         <Card>
           <CardHeader className="text-center">
-            <h3 className="text-2xl font-semibold text-gray-800">Login</h3>
+            <img
+              src="/logoTCC.png"
+              alt="Logo"
+              className="mx-auto mb-6 w-35 h-35 object-contain"
+            />
+            <h3 className="text-3xl font-bold text-gray-800">Login</h3>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin}>
@@ -80,7 +82,7 @@ export default function LoginPage() {
               {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
               <Button
                 type="submit"
-                className={`${buttonVariants({ variant: "outline" })} bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:bg-blue-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75`}
+                className={`${buttonVariants({ variant: "outline" })} bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75`}
               >
                 Entrar
               </Button>
@@ -93,6 +95,9 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
       </div>
+      <footer className="absolute bottom-4 text-gray-600 text-xs">
+        © 2024 - TADS School
+      </footer>
     </div>
   );
 }
