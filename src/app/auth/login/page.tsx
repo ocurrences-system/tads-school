@@ -18,24 +18,27 @@ export default function LoginPage() {
     setError(""); // Limpar erro antes de tentar logar
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_JSON_SERVER_URL}/users?email=${login}&senha=${password}`
-      );
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: login, senha: password }),
+      });
 
       if (!response.ok) {
-        throw new Error("Falha na requisição ao servidor.");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao tentar fazer login.");
       }
 
-      const data = await response.json();
+      const user = await response.json();
+      console.log("Usuário autenticado:", user);
 
-      if (data.length > 0) {
-        router.push("/dashboard");
-      } else {
-        setError("Usuário ou senha inválidos.");
-      }
-    } catch (err) {
-      console.error("Erro ao fazer login:", err);
-      setError("Erro ao tentar fazer login. Tente novamente mais tarde.");
+      // Redirecionar para o dashboard
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Erro ao fazer login:", err.message);
+      setError(err.message || "Erro ao tentar fazer login. Tente novamente mais tarde.");
     }
   };
 

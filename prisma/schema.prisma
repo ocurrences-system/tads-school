@@ -1,40 +1,64 @@
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id     String @id @default(cuid())
-  nome   String
-  email  String @unique
-  funcao String
-  senha  String
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
 
+model User {
+  id          String       @id @default(cuid())
+  nome        String
+  email       String       @unique
+  funcao      String
+  senha       String
   occurrences Occurrence[]
 }
 
-model Student {
-  id              String   @id @default(cuid())
-  nome            String
-  email           String   @unique
-  turma           String
-  data_nascimento DateTime
+model Turma {
+  id     String    @id @default(cuid())
+  nome   String    @unique
+  alunos Student[]
+}
 
-  occurrences Occurrence[]
+model Student {
+  id              String        @id @default(cuid())
+  nome            String
+  email           String        @unique
+  turmaId         String
+  turma           Turma         @relation(fields: [turmaId], references: [id])
+  data_nascimento DateTime
+  occurrences     Occurrence[]
+  tipoCounter     TipoCounter[]
 }
 
 model Occurrence {
   id        String   @id @default(cuid())
   alunoId   String
-  aluno     Student  @relation(fields: [alunoId], references: [id])
   usuarioId String
-  usuario   User     @relation(fields: [usuarioId], references: [id])
   data      DateTime
-  tipo      String
+  tipoId    String
+  tipo      Tipo     @relation(fields: [tipoId], references: [id])
   descricao String
   decisao   String
+  usuario   User     @relation(fields: [usuarioId], references: [id])
+  aluno     Student  @relation(fields: [alunoId], references: [id])
+}
+
+model Tipo {
+  id          String        @id @default(cuid())
+  nome        String        @unique
+  gravidade   Int
+  occurrences Occurrence[]
+  TipoCounter TipoCounter[]
+}
+
+model TipoCounter {
+  id      String  @id @default(cuid())
+  alunoId String
+  tipoId  String
+  count   Int     @default(0)
+  aluno   Student @relation(fields: [alunoId], references: [id])
+  tipo    Tipo    @relation(fields: [tipoId], references: [id])
 }
