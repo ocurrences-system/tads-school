@@ -18,8 +18,10 @@ model User {
 
 model Turma {
   id     String    @id @default(cuid())
-  nome   String    @unique
+  nome   String
+  ano    Int
   alunos Student[]
+  @@unique([nome, ano])
 }
 
 model Student {
@@ -31,6 +33,7 @@ model Student {
   data_nascimento DateTime
   occurrences     Occurrence[]
   tipoCounter     TipoCounter[]
+  foto            Bytes?        // Campo opcional para armazenar a imagem como BLOB
 }
 
 model Occurrence {
@@ -42,6 +45,7 @@ model Occurrence {
   tipo      Tipo     @relation(fields: [tipoId], references: [id])
   descricao String
   decisao   String
+  resolvida Boolean  @default(false) // Flag para indicar se foi tratada
   usuario   User     @relation(fields: [usuarioId], references: [id])
   aluno     Student  @relation(fields: [alunoId], references: [id])
 }

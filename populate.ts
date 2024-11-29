@@ -27,9 +27,17 @@ async function main() {
   console.log("Usuário de teste criado:", usuarioTeste);
 
   // Criação de turmas
-  const turma1 = await prisma.turma.create({ data: { id: "1", nome: "9º Ano A" } });
-  const turma2 = await prisma.turma.create({ data: { id: "2", nome: "9º Ano B" } });
-  const turma3 = await prisma.turma.create({ data: { id: "3", nome: "9º Ano C" } });
+  const turma1 = await prisma.turma.create({ 
+    data: { id: "1", nome: "9º Ano A", ano: 2024 } 
+  });
+  
+  const turma2 = await prisma.turma.create({ 
+    data: { id: "2", nome: "9º Ano B", ano: 2024 } 
+  });
+  
+  const turma3 = await prisma.turma.create({ 
+    data: { id: "3", nome: "9º Ano C", ano: 2024 } 
+  });
 
   console.log("Turmas criadas:", [turma1, turma2, turma3]);
 

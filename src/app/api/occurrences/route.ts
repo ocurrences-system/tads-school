@@ -9,9 +9,13 @@ export async function GET() {
   try {
     const occurrences = await prisma.occurrence.findMany({
       include: {
-        aluno: true, // Inclui os detalhes do aluno relacionado
-        usuario: true, // Inclui os detalhes do usuário relacionado
-        tipo: true, // Inclui os detalhes do tipo de ocorrência relacionado
+        aluno: {
+          include: {
+            turma: true, // Inclui os detalhes da turma
+          },
+        },
+        tipo: true,
+        usuario: true,
       },
     });
 
@@ -32,9 +36,9 @@ export async function POST(request: Request) {
     const { alunoId, data, tipoId, descricao, decisao, usuarioId } = body;
 
     // Validação dos dados recebidos
-    if (!alunoId || !data || !tipoId || !descricao || !decisao || !usuarioId) {
+    if (!alunoId || !data || !tipoId || !descricao || !usuarioId) {
       return NextResponse.json(
-        { error: "Todos os campos são obrigatórios." },
+        { error: "Todos os campos (alunoId, data, tipoId, descricao, usuarioId) são obrigatórios." },
         { status: 400 }
       );
     }
@@ -74,7 +78,7 @@ export async function POST(request: Request) {
         tipoId, // Relaciona com o tipo de ocorrência
         data: new Date(data),
         descricao,
-        decisao,
+        decisao: decisao || "", // Decisão pode ser opcional inicialmente
       },
     });
 

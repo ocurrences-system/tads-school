@@ -13,7 +13,6 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
     tipoId: "",
     data: "",
     descricao: "",
-    decisao: "",
   });
   const [turmas, setTurmas] = useState([]);
   const [alunos, setAlunos] = useState([]);
@@ -83,8 +82,7 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
       !formData.alunoId ||
       !formData.tipoId ||
       !formData.data ||
-      !formData.descricao ||
-      !formData.decisao
+      !formData.descricao
     ) {
       toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
@@ -99,7 +97,6 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
           tipoId: formData.tipoId,
           data: formData.data,
           descricao: formData.descricao,
-          decisao: formData.decisao,
           usuarioId: "1", // ID fixo do usuário de teste
         }),
       });
@@ -198,18 +195,6 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
                 placeholder="Descrição da ocorrência"
                 value={formData.descricao}
                 onChange={(e) => handleFormChange("descricao", e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Decisão */}
-            <div>
-              <Label>Decisão</Label>
-              <Input
-                type="text"
-                placeholder="Decisão tomada"
-                value={formData.decisao}
-                onChange={(e) => handleFormChange("decisao", e.target.value)}
                 required
               />
             </div>

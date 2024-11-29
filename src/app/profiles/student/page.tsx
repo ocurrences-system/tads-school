@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import Link from "next/link";
+import ModalEditStudent from "@/components/ModalEditStudent";
 
 export default function PerfilAluno() {
   const router = useRouter();
@@ -18,9 +19,58 @@ export default function PerfilAluno() {
   const [selectedStudentId, setSelectedStudentId] = useState(alunoIdFromURL);
   const [studentData, setStudentData] = useState(null);
   const [occurrences, setOccurrences] = useState([]);
-  const [isSearching, setIsSearching] = useState(!alunoIdFromURL); // Estado para alternar entre perfil e busca
+  const [filteredOccurrences, setFilteredOccurrences] = useState([]);
+  const [isSearching, setIsSearching] = useState(!alunoIdFromURL);
+  const [pastClasses, setPastClasses] = useState([]); // Histórico de turmas passadas
+  const [selectedOccurrence, setSelectedOccurrence] = useState(null); // Ocorrência selecionada
 
-  // Fetch turmas no carregamento inicial
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false); // Controle do modal de imagem
+  const [isOccurrenceModalOpen, setIsOccurrenceModalOpen] = useState(false); // Controle do modal de ocorrência
+
+  const [filterSeverity, setFilterSeverity] = useState(""); // Filtro de gravidade
+
+  const handleSaveOccurrence = async (occurrenceId, updatedData) => {
+    try {
+      const response = await fetch(`/api/occurrences/${occurrenceId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData), // Envia todos os campos
+      });
+  
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar a ocorrência");
+      }
+  
+      const updatedOccurrence = await response.json();
+  
+      // Atualiza o estado local com a nova ocorrência
+      setOccurrences((prevOccurrences) =>
+        prevOccurrences.map((occ) =>
+          occ.id === updatedOccurrence.id ? updatedOccurrence : occ
+        )
+      );
+  
+      setFilteredOccurrences((prevFiltered) =>
+        prevFiltered.map((occ) =>
+          occ.id === updatedOccurrence.id ? updatedOccurrence : occ
+        )
+      );
+  
+      toast.success("Ocorrência atualizada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao atualizar a ocorrência:", error);
+      toast.error("Erro ao atualizar a ocorrência.");
+    }
+  };
+  
+
+  const handleStudentUpdated = (updatedStudent) => {
+    setStudentData(updatedStudent);
+  };
+
   useEffect(() => {
     const fetchTurmas = async () => {
       try {
@@ -37,7 +87,6 @@ export default function PerfilAluno() {
     fetchTurmas();
   }, []);
 
-  // Buscar alunos por turma
   useEffect(() => {
     if (selectedTurma) {
       const fetchStudents = async () => {
@@ -58,7 +107,6 @@ export default function PerfilAluno() {
     }
   }, [selectedTurma]);
 
-  // Buscar estudante e ocorrências associadas
   useEffect(() => {
     if (selectedStudentId) {
       const fetchStudentData = async () => {
@@ -66,13 +114,22 @@ export default function PerfilAluno() {
           const response = await fetch(`/api/students/${selectedStudentId}`);
           if (!response.ok) throw new Error("Erro ao buscar estudante");
           const data = await response.json();
+          if (data.foto && data.foto.type === "Buffer" && Array.isArray(data.foto.data)) {
+            const base64String = `data:image/jpeg;base64,${Buffer.from(data.foto.data).toString("base64")}`;
+            data.foto = base64String;
+          }
           setStudentData(data);
 
-          // Buscar ocorrências do estudante
           const occurrencesResponse = await fetch(`/api/students/${selectedStudentId}/occurrences`);
           if (!occurrencesResponse.ok) throw new Error("Erro ao buscar ocorrências");
           const occurrencesData = await occurrencesResponse.json();
           setOccurrences(occurrencesData);
+          setFilteredOccurrences(occurrencesData);
+
+          const pastClassesResponse = await fetch(`/api/students/${selectedStudentId}/past-classes`);
+          if (!pastClassesResponse.ok) throw new Error("Erro ao buscar histórico de turmas");
+          const pastClassesData = await pastClassesResponse.json();
+          setPastClasses(pastClassesData);
         } catch (error) {
           console.error("Erro ao carregar dados do estudante:", error);
           toast.error("Erro ao carregar os dados do estudante.");
@@ -97,6 +154,27 @@ export default function PerfilAluno() {
     router.push(`/profiles/student`);
   };
 
+  const handleOccurrenceClick = (occurrence) => {
+    setSelectedOccurrence(occurrence);
+    setIsOccurrenceModalOpen(true);
+  };
+
+
+  const handleFilterChange = (e) => {
+    const severity = e.target.value;
+    setFilterSeverity(severity);
+    if (severity) {
+      setFilteredOccurrences(occurrences.filter((o) => o.tipo?.gravidade === parseInt(severity)));
+    } else {
+      setFilteredOccurrences(occurrences);
+    }
+  };
+
+  const handleOccurrenceDecision = (decision) => {
+    toast.success(`Decisão "${decision}" aplicada à ocorrência: ${selectedOccurrence.descricao}`);
+    setIsOccurrenceModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-md p-4">
@@ -118,7 +196,6 @@ export default function PerfilAluno() {
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-800">Buscar Aluno</h2>
 
-            {/* Seleção de Turma */}
             <div className="mb-4">
               <label htmlFor="turma" className="block text-sm font-medium text-gray-700">
                 Selecione uma Turma
@@ -132,14 +209,13 @@ export default function PerfilAluno() {
                 <option value="">Selecione uma turma</option>
                 {turmas.map((turma) => (
                   <option key={turma.id} value={turma.id}>
-                    {turma.nome}
+                    {turma.nome} - {turma.ano}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Seleção de Aluno */}
-            {students.length > 0 && (
+            {students.length > 0 ? (
               <div className="mb-4">
                 <label htmlFor="aluno" className="block text-sm font-medium text-gray-700">
                   Selecione um Aluno
@@ -158,6 +234,8 @@ export default function PerfilAluno() {
                   ))}
                 </select>
               </div>
+            ) : (
+              <p className="text-gray-600">Nenhum aluno encontrado para esta turma.</p>
             )}
           </div>
         ) : (
@@ -167,6 +245,9 @@ export default function PerfilAluno() {
               <Button onClick={handleSearchAgain} className="mt-4">
                 Buscar Outro Aluno
               </Button>
+              <Button onClick={() => setIsEditModalOpen(true)} className="mt-4 ml-2">
+                Editar Aluno
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -175,6 +256,17 @@ export default function PerfilAluno() {
                   <h3 className="text-xl font-semibold mb-4 text-gray-700">Dados Pessoais</h3>
                 </CardHeader>
                 <CardContent>
+                  {studentData.foto ? (
+                    <img
+                      src={studentData.foto}
+                      alt="Foto do Aluno"
+                      className="w-32 h-40 object-cover border rounded-md mb-4 cursor-pointer"
+                      loading="lazy"
+                      onClick={() => setIsImageModalOpen(true)} // Abre o modal ao clicar
+                    />
+                  ) : (
+                    <p className="text-gray-600 mb-4">Foto não disponível.</p>
+                  )}
                   <p className="mb-2">
                     <strong>Nome:</strong> {studentData.nome}
                   </p>
@@ -186,8 +278,24 @@ export default function PerfilAluno() {
                     {new Date(studentData.data_nascimento).toLocaleDateString()}
                   </p>
                   <p className="mb-2">
-                    <strong>Turma:</strong> {studentData.turma?.nome || "Não atribuída"}
+                    <strong>Turma Atual:</strong> {studentData.turma?.nome} - {studentData.turma?.ano || "Não atribuída"}
                   </p>
+                  {pastClasses.length > 0 && (
+                    <div className="mt-4">
+                      <strong>Turmas Passadas:</strong>
+                      <ul className="list-disc pl-5">
+                        {pastClasses.map((turma) => (
+                          <li key={turma.id}>
+                            <Link href={`/turmas/${turma.id}`}>
+                              <span className="text-blue-600 hover:underline">
+                                {turma.nome} - {turma.ano}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -195,6 +303,22 @@ export default function PerfilAluno() {
                 <Card>
                   <CardHeader>
                     <h3 className="text-xl font-semibold mb-4 text-gray-700">Ocorrências</h3>
+                    <div className="mb-4">
+                      <label htmlFor="filter" className="block text-sm font-medium text-gray-700">
+                        Filtrar por Gravidade
+                      </label>
+                      <select
+                        id="filter"
+                        className="w-full border rounded p-2 mt-1"
+                        value={filterSeverity}
+                        onChange={handleFilterChange}
+                      >
+                        <option value="">Todas</option>
+                        <option value="1">Baixa</option>
+                        <option value="2">Média</option>
+                        <option value="3">Alta</option>
+                      </select>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <table className="min-w-full bg-white">
@@ -207,16 +331,16 @@ export default function PerfilAluno() {
                         </tr>
                       </thead>
                       <tbody>
-                        {occurrences.map((occurrence) => (
+                        {filteredOccurrences.map((occurrence) => (
                           <tr
                             key={occurrence.id}
-                            className={`border-t border-gray-200 ${
-                              occurrence.tipo?.gravidade >= 3
-                                ? "bg-red-200"
-                                : occurrence.tipo?.gravidade === 2
+                            className={`border-t border-gray-200 ${occurrence.tipo?.gravidade >= 3
+                              ? "bg-red-200"
+                              : occurrence.tipo?.gravidade === 2
                                 ? "bg-yellow-100"
                                 : "bg-green-100"
-                            }`}
+                              }`}
+                            onClick={() => handleOccurrenceClick(occurrence)} // Clique para tratar
                           >
                             <td className="py-3 px-4">{new Date(occurrence.data).toLocaleDateString()}</td>
                             <td className="py-3 px-4">{occurrence.tipo?.nome || "Desconhecido"}</td>
@@ -228,8 +352,112 @@ export default function PerfilAluno() {
                     </table>
                   </CardContent>
                 </Card>
+                <ModalEditStudent
+                  isOpen={isEditModalOpen}
+                  onClose={() => setIsEditModalOpen(false)}
+                  student={studentData}
+                  onStudentUpdated={handleStudentUpdated}
+                />
               </div>
             </div>
+
+            {isImageModalOpen && (
+              <div
+                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                onClick={() => setIsImageModalOpen(false)} // Fecha o modal ao clicar fora
+              >
+                <div
+                  className="bg-white p-4 rounded-md shadow-lg"
+                  onClick={(e) => e.stopPropagation()} // Impede o fechamento ao clicar na imagem
+                >
+                  <img
+                    src={studentData.foto}
+                    alt="Foto Ampliada do Aluno"
+                    className="w-auto max-w-full max-h-[80vh] object-contain"
+                  />
+                </div>
+              </div>
+            )}
+
+            {isOccurrenceModalOpen && (
+              <div
+                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                onClick={() => setIsOccurrenceModalOpen(false)} // Fecha o modal ao clicar fora
+              >
+                <div
+                  className="bg-white p-6 rounded-md shadow-lg max-w-md w-full"
+                  onClick={(e) => e.stopPropagation()} // Impede o fechamento ao clicar no conteúdo
+                >
+                  <h2 className="text-xl font-semibold mb-4">Tratar Ocorrência</h2>
+                  <p><strong>Data:</strong> {new Date(selectedOccurrence.data).toLocaleDateString()}</p>
+                  <p><strong>Tipo:</strong> {selectedOccurrence.tipo?.nome || "Não especificado"}</p>
+
+                  <label className="block text-sm font-medium text-gray-700 mt-4">
+                    Atualizar Descrição
+                  </label>
+                  <textarea
+                    className="w-full border rounded p-2 mt-2"
+                    placeholder="Atualize a descrição da ocorrência"
+                    value={selectedOccurrence.descricao || ""}
+                    onChange={(e) =>
+                      setSelectedOccurrence((prev) => ({
+                        ...prev,
+                        descricao: e.target.value, // Atualiza a descrição no estado local
+                      }))
+                    }
+                  />
+
+                  <label className="block text-sm font-medium text-gray-700 mt-4">
+                    Escreva a Decisão
+                  </label>
+                  <textarea
+                    className="w-full border rounded p-2 mt-2"
+                    placeholder="Escreva a decisão"
+                    value={selectedOccurrence.decisao || ""}
+                    onChange={(e) =>
+                      setSelectedOccurrence((prev) => ({
+                        ...prev,
+                        decisao: e.target.value, // Atualiza a decisão no estado local
+                      }))
+                    }
+                  />
+
+                  <label className="block text-sm font-medium text-gray-700 mt-4">
+                    Resolvida
+                  </label>
+                  <input
+                    type="checkbox"
+                    className="mt-2"
+                    checked={selectedOccurrence.resolvida || false} // Mostra o estado atual de resolvida
+                    onChange={(e) =>
+                      setSelectedOccurrence((prev) => ({
+                        ...prev,
+                        resolvida: e.target.checked, // Atualiza o estado de resolvida
+                      }))
+                    }
+                  />
+
+                  <div className="flex justify-end space-x-4 mt-6">
+                    <Button
+                      onClick={() => {
+                        const { id, descricao, decisao, resolvida } = selectedOccurrence;
+                        handleSaveOccurrence(id, { descricao, decisao, resolvida }); // Envia todos os dados para salvar
+                        setIsOccurrenceModalOpen(false);
+                      }}
+                      className="bg-green-500"
+                    >
+                      Salvar
+                    </Button>
+
+                    <Button onClick={() => setIsOccurrenceModalOpen(false)} className="bg-red-500">
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
           </>
         )}
       </div>

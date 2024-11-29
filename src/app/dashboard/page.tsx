@@ -7,6 +7,7 @@ import { Bar } from "react-chartjs-2";
 import { toast } from "sonner";
 import Link from "next/link";
 import ModalAddOccurrence from "@/components/ModalAddOccurrence";
+import ModalTurmaOccurrences from "@/components/ModalTurmaOccurrences";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -24,6 +25,8 @@ export default function Dashboard() {
   const [turmas, setTurmas] = useState([]);
   const [selectedTurma, setSelectedTurma] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isTurmaModalOpen, setIsTurmaModalOpen] = useState(false);
+  const [selectedTurmaOccurrences, setSelectedTurmaOccurrences] = useState([]);
 
   // Fetch de ocorrências e turmas no backend
   useEffect(() => {
@@ -54,48 +57,48 @@ export default function Dashboard() {
 
   const filteredOccurrences = useMemo(() => {
     if (selectedTurma) {
-      return ocorrencias.filter((o) => o.aluno?.turmaId === selectedTurma);
+      return ocorrencias.filter((o) => o.aluno?.turma?.id === selectedTurma);
     }
     return ocorrencias;
   }, [ocorrencias, selectedTurma]);
 
-  const getMonthlyOccurrences = () => {
-    const monthlyCounts = Array(12).fill(0);
-    filteredOccurrences.forEach((ocorrencia) => {
-      const month = new Date(ocorrencia.data).getMonth();
-      monthlyCounts[month] += 1;
+  const getTurmaOccurrences = () => {
+    const turmaCounts = {};
+    ocorrencias.forEach((ocorrencia) => {
+      const turmaName = ocorrencia.aluno?.turma
+        ? `${ocorrencia.aluno.turma.nome} (${ocorrencia.aluno.turma.ano})`
+        : "Turma Desconhecida";
+      turmaCounts[turmaName] = (turmaCounts[turmaName] || 0) + 1;
     });
-    return monthlyCounts;
+    return {
+      labels: Object.keys(turmaCounts),
+      datasets: [
+        {
+          label: "Ocorrências por Turma",
+          data: Object.values(turmaCounts),
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const handleBarClick = (event, elements) => {
+    if (elements.length === 0) return;
+
+    const chart = elements[0].element;
+    const turma = chart.$context.raw; // Nome da turma
+    const turmaOccurrences = ocorrencias.filter(
+      (o) => o.aluno?.turma?.nome === turma
+    );
+
+    setSelectedTurmaOccurrences(turmaOccurrences);
+    setIsTurmaModalOpen(true);
   };
 
   const handleOccurrenceAdded = (newOccurrence) => {
     setOcorrencias((prev) => [...prev, newOccurrence]);
-  };
-
-  const barData = {
-    labels: [
-      "Janeiro",
-      "Fevereiro",
-      "Março",
-      "Abril",
-      "Maio",
-      "Junho",
-      "Julho",
-      "Agosto",
-      "Setembro",
-      "Outubro",
-      "Novembro",
-      "Dezembro",
-    ],
-    datasets: [
-      {
-        label: "Ocorrências",
-        data: getMonthlyOccurrences(),
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        borderColor: "rgba(75, 192, 192, 1)",
-        borderWidth: 1,
-      },
-    ],
   };
 
   return (
@@ -121,7 +124,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
-              <h3 className="font-semibold text-lg">Ocorrências Recentes</h3>
+              <h3 className="font-semibold text-lg">Ocorrências em Aberto</h3>
             </CardHeader>
             <CardContent>
               <ul className="list-disc pl-5">
@@ -136,9 +139,6 @@ export default function Dashboard() {
                   </li>
                 ))}
               </ul>
-              <Button className="mt-4 w-full">
-                <Link href="/occurrences">Gerenciar Ocorrências</Link>
-              </Button>
             </CardContent>
           </Card>
 
@@ -155,14 +155,19 @@ export default function Dashboard() {
                     <option value="">Todas as Turmas</option>
                     {turmas.map((turma) => (
                       <option key={turma.id} value={turma.id}>
-                        {turma.nome}
+                        {turma.nome} ({turma.ano})
                       </option>
                     ))}
                   </select>
                 </div>
               </CardHeader>
               <CardContent>
-                <Bar data={barData} />
+                <Bar
+                  data={getTurmaOccurrences()}
+                  options={{
+                    onClick: handleBarClick,
+                  }}
+                />
               </CardContent>
             </Card>
           </div>
@@ -196,6 +201,14 @@ export default function Dashboard() {
         onClose={() => setIsAddModalOpen(false)}
         onOccurrenceAdded={handleOccurrenceAdded}
       />
+
+      {isTurmaModalOpen && (
+        <ModalTurmaOccurrences
+          isOpen={isTurmaModalOpen}
+          onClose={() => setIsTurmaModalOpen(false)}
+          occurrences={selectedTurmaOccurrences}
+        />
+      )}
     </div>
   );
 }
