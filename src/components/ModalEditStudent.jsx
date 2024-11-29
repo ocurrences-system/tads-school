@@ -115,15 +115,6 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Foto</label>
                         <Input type="file" accept="image/*" onChange={handleFileChange} />
-                        {formData.foto && (
-                            <div className="mt-4">
-                                <img
-                                    src={`data:image/jpeg;base64,${formData.foto}`}
-                                    alt="Foto do Aluno"
-                                    className="w-32 h-40 border border-gray-300"
-                                />
-                            </div>
-                        )}
                     </div>
                     <Button type="submit">Salvar</Button>
                 </form>

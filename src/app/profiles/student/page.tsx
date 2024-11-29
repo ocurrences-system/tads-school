@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Pencil, Trash } from "lucide-react";
 import Link from "next/link";
 import ModalEditStudent from "@/components/ModalEditStudent";
 
@@ -20,6 +21,7 @@ export default function PerfilAluno() {
   const [studentData, setStudentData] = useState(null);
   const [occurrences, setOccurrences] = useState([]);
   const [filteredOccurrences, setFilteredOccurrences] = useState([]);
+  const [searchText, setSearchText] = useState("");
   const [isSearching, setIsSearching] = useState(!alunoIdFromURL);
   const [pastClasses, setPastClasses] = useState([]); // Histórico de turmas passadas
   const [selectedOccurrence, setSelectedOccurrence] = useState(null); // Ocorrência selecionada
@@ -28,7 +30,22 @@ export default function PerfilAluno() {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false); // Controle do modal de imagem
   const [isOccurrenceModalOpen, setIsOccurrenceModalOpen] = useState(false); // Controle do modal de ocorrência
 
-  const [filterSeverity, setFilterSeverity] = useState(""); // Filtro de gravidade
+  const [filterSeverity, setFilterSeverity] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [showResolved, setShowResolved] = useState(false);
+
+  const toggleSortOrder = () => {
+    const newSortOrder = sortOrder === "asc" ? "desc" : "asc"; // Inverte a ordem
+    setSortOrder(newSortOrder);
+
+    const sortedOccurrences = [...filteredOccurrences].sort((a, b) => {
+      const dateA = new Date(a.data);
+      const dateB = new Date(b.data);
+      return newSortOrder === "asc" ? dateA - dateB : dateB - dateA; // Ordena baseado na data
+    });
+
+    setFilteredOccurrences(sortedOccurrences);
+  };
 
   const handleSaveOccurrence = async (occurrenceId, updatedData) => {
     try {
@@ -39,33 +56,59 @@ export default function PerfilAluno() {
         },
         body: JSON.stringify(updatedData), // Envia todos os campos
       });
-  
+
       if (!response.ok) {
         throw new Error("Erro ao atualizar a ocorrência");
       }
-  
+
       const updatedOccurrence = await response.json();
-  
+
       // Atualiza o estado local com a nova ocorrência
       setOccurrences((prevOccurrences) =>
         prevOccurrences.map((occ) =>
           occ.id === updatedOccurrence.id ? updatedOccurrence : occ
         )
       );
-  
+
       setFilteredOccurrences((prevFiltered) =>
         prevFiltered.map((occ) =>
           occ.id === updatedOccurrence.id ? updatedOccurrence : occ
         )
       );
-  
+
       toast.success("Ocorrência atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar a ocorrência:", error);
       toast.error("Erro ao atualizar a ocorrência.");
     }
   };
-  
+
+  const handleDeleteOccurrence = async (id) => {
+    if (confirm("Tem certeza que deseja excluir esta ocorrência?")) {
+      try {
+        const response = await fetch(`/api/occurrences/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro ao excluir a ocorrência.");
+        }
+
+        setOccurrences((prev) => prev.filter((occ) => occ.id !== id));
+        setFilteredOccurrences((prev) => prev.filter((occ) => occ.id !== id));
+        toast.success("Ocorrência excluída com sucesso!");
+      } catch (error) {
+        console.error(error);
+        toast.error("Erro ao excluir a ocorrência.");
+      }
+    }
+  };
+
+  const handleResolvedToggle = () => {
+    const filtered = occurrences.filter((o) => o.resolvida === showResolved);
+    setFilteredOccurrences(filtered);
+    setShowResolved(!showResolved);
+  };
 
   const handleStudentUpdated = (updatedStudent) => {
     setStudentData(updatedStudent);
@@ -175,22 +218,16 @@ export default function PerfilAluno() {
     setIsOccurrenceModalOpen(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-md p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <span className="text-2xl font-semibold text-gray-800">Perfil do Aluno</span>
-          <div className="flex space-x-4">
-            <Button asChild>
-              <Link href="/dashboard">Dashboard</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/">Logout</Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
+  const openModal = (description: string) => {
+    setSelectedDescription(description);
+    setIsModalOpen(true);
+  };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDescription, setSelectedDescription] = useState("");
+
+  return (
+    <div className="min-h-screen bg-gray-100 pt-16">
       <div className="container mx-auto mt-8">
         {isSearching || !studentData ? (
           <div className="mb-8">
@@ -319,6 +356,43 @@ export default function PerfilAluno() {
                         <option value="3">Alta</option>
                       </select>
                     </div>
+                    <div>
+                      <label htmlFor="search" className="block text-sm font-medium text-gray-700">
+                        Buscar por Texto
+                      </label>
+                      <input
+                        id="search"
+                        type="text"
+                        className="w-full border rounded p-2 mt-1"
+                        placeholder="Descrição ou Decisão"
+                        value={searchText}
+                        onChange={(e) => {
+                          const text = e.target.value.toLowerCase();
+                          setSearchText(text);
+                          const filtered = occurrences.filter(
+                            (o) =>
+                              o.descricao?.toLowerCase().includes(text) ||
+                              o.decisao?.toLowerCase().includes(text)
+                          );
+                          setFilteredOccurrences(text ? filtered : occurrences);
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <label htmlFor="resolved" className="block text-sm font-medium text-gray-700">
+                        Resolvidas
+                      </label>
+                      <input
+                        type="checkbox"
+                        id="resolved"
+                        className="ml-2"
+                        checked={showResolved}
+                        onChange={handleResolvedToggle}
+                      />
+                    </div>
+                    <Button onClick={toggleSortOrder}>
+                      Ordenar por Data ({sortOrder === "asc" ? "Ascendente" : "Descendente"})
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <table className="min-w-full bg-white">
@@ -328,6 +402,8 @@ export default function PerfilAluno() {
                           <th className="text-left py-3 px-4 text-gray-600">Tipo</th>
                           <th className="text-left py-3 px-4 text-gray-600">Descrição</th>
                           <th className="text-left py-3 px-4 text-gray-600">Gravidade</th>
+                          <th className="text-left py-3 px-4 text-gray-600">Resolvida</th>
+                          <th className="text-left py-3 px-4 text-gray-600">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -335,21 +411,47 @@ export default function PerfilAluno() {
                           <tr
                             key={occurrence.id}
                             className={`border-t border-gray-200 ${occurrence.tipo?.gravidade >= 3
-                              ? "bg-red-200"
-                              : occurrence.tipo?.gravidade === 2
-                                ? "bg-yellow-100"
-                                : "bg-green-100"
+                                ? "bg-red-200"
+                                : occurrence.tipo?.gravidade === 2
+                                  ? "bg-yellow-100"
+                                  : "bg-green-100"
                               }`}
-                            onClick={() => handleOccurrenceClick(occurrence)} // Clique para tratar
                           >
-                            <td className="py-3 px-4">{new Date(occurrence.data).toLocaleDateString()}</td>
+                            <td className="py-3 px-4">
+                              {new Date(occurrence.data).toLocaleDateString()}
+                            </td>
                             <td className="py-3 px-4">{occurrence.tipo?.nome || "Desconhecido"}</td>
-                            <td className="py-3 px-4">{occurrence.descricao}</td>
+                            <td
+                              className="px-2 py-2 truncate max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer"
+                              onClick={() => openModal(occurrence.descricao)} // Abre o modal para descrição
+                            >
+                              {occurrence.descricao}
+                            </td>
                             <td className="py-3 px-4">{occurrence.tipo?.gravidade || "N/A"}</td>
+                            <td className="py-3 px-4">{occurrence.resolvida ? "Sim" : "Não"}</td>
+                            <td className="py-3 px-4 flex space-x-4">
+                              {/* Ícone de editar */}
+                              <button
+                                onClick={() => handleOccurrenceClick(occurrence)}
+                                className="text-blue-500 hover:text-blue-700"
+                                aria-label="Editar ocorrência"
+                              >
+                                <Pencil size={20} />
+                              </button>
+                              {/* Ícone de excluir */}
+                              <button
+                                onClick={() => handleDeleteOccurrence(occurrence.id)} // Função para excluir ocorrência
+                                className="text-red-500 hover:text-red-700"
+                                aria-label="Excluir ocorrência"
+                              >
+                                <Trash size={20} />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+
                   </CardContent>
                 </Card>
                 <ModalEditStudent
@@ -360,6 +462,20 @@ export default function PerfilAluno() {
                 />
               </div>
             </div>
+
+            {isModalOpen && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
+                  <h2 className="text-lg font-bold mb-4">Descrição Completa</h2>
+                  <p className="text-gray-700">{selectedDescription}</p>
+                  <div className="flex justify-end mt-4">
+                    <Button onClick={() => setIsModalOpen(false)} variant="outline">
+                      Fechar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {isImageModalOpen && (
               <div
@@ -456,7 +572,6 @@ export default function PerfilAluno() {
                 </div>
               </div>
             )}
-
 
           </>
         )}

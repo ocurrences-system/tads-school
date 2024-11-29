@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import ClientProvider from "@/components/ClientProvider"; // Importar o ClientProvider
+import { Toaster } from "sonner"; // Importar o Toaster do Sonner
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,7 +30,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ClientProvider> {/* Envolver o layout com o ClientProvider */}
+          <Toaster position="bottom-center" />
+          {children}
+        </ClientProvider>
       </body>
     </html>
   );

@@ -10,10 +10,19 @@ datasource db {
 model User {
   id          String       @id @default(cuid())
   nome        String
-  email       String       @unique
-  funcao      String
+  login       String       @unique
   senha       String
+  funcaoId    String
+  funcao      Funcao       @relation(fields: [funcaoId], references: [id])
   occurrences Occurrence[]
+  foto        String?
+}
+
+model Funcao {
+  id          String  @id @default(cuid())
+  nome        String  @unique
+  poder       Int     @default(1) // Validação deve ser tratada na aplicação
+  usuarios    User[]
 }
 
 model Turma {

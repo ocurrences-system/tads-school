@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import ModalAddOccurrence from "@/components/ModalAddOccurrence";
 import ModalTurmaOccurrences from "@/components/ModalTurmaOccurrences";
+import { useSession } from "next-auth/react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,10 +28,21 @@ export default function Dashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isTurmaModalOpen, setIsTurmaModalOpen] = useState(false);
   const [selectedTurmaOccurrences, setSelectedTurmaOccurrences] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const { data: session, status } = useSession();
+
+  // Redireciona para login se não estiver autenticado
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      window.location.href = "/login";
+    }
+  }, [status]);
 
   // Fetch de ocorrências e turmas no backend
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const [ocorrenciasResponse, turmasResponse] = await Promise.all([
           fetch("/api/occurrences"),
@@ -49,6 +61,8 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast.error("Não foi possível carregar os dados.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -87,10 +101,11 @@ export default function Dashboard() {
   const handleBarClick = (event, elements) => {
     if (elements.length === 0) return;
 
-    const chart = elements[0].element;
-    const turma = chart.$context.raw; // Nome da turma
+    const index = elements[0].index;
+    const turma = getTurmaOccurrences().labels[index];
     const turmaOccurrences = ocorrencias.filter(
-      (o) => o.aluno?.turma?.nome === turma
+      (o) =>
+        `${o.aluno?.turma?.nome} (${o.aluno?.turma?.ano})` === turma
     );
 
     setSelectedTurmaOccurrences(turmaOccurrences);
@@ -99,27 +114,20 @@ export default function Dashboard() {
 
   const handleOccurrenceAdded = (newOccurrence) => {
     setOcorrencias((prev) => [...prev, newOccurrence]);
+    toast.success("Ocorrência adicionada com sucesso!");
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="relative flex items-center justify-between h-16">
-            <div className="flex-1 flex items-center justify-start">
-              <a className="text-lg font-bold" href="#">
-                Sistema de Ocorrências
-              </a>
-            </div>
-            <div className="flex items-center">
-              <Button asChild>
-                <Link href="/">Logout</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+  const handleCloseTurmaModal = () => {
+    setSelectedTurmaOccurrences([]);
+    setIsTurmaModalOpen(false);
+  };
 
+  if (isLoading) {
+    return <p className="text-center mt-10">Carregando dados...</p>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 pt-16">
       <div className="container mx-auto mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card>
@@ -128,16 +136,23 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <ul className="list-disc pl-5">
-                {filteredOccurrences.slice(0, 5).map((o) => (
-                  <li key={o.id}>
-                    <Link href={`/profiles/student?id=${o.aluno?.id}`}>
-                      <span className="text-blue-600 hover:underline">
-                        {o.aluno?.nome || "Aluno não encontrado"}
-                      </span>
-                    </Link>{" "}
-                    - {o.tipo?.nome || "Tipo desconhecido"}
-                  </li>
-                ))}
+                {filteredOccurrences.length > 0 ? (
+                  filteredOccurrences
+                    .filter((o) => o.resolvida === false) // Filtra apenas as ocorrências não resolvidas
+                    .slice(0, 5)
+                    .map((o) => (
+                      <li key={o.id}>
+                        <Link href={`/profiles/student?id=${o.aluno?.id}`}>
+                          <span className="text-blue-600 hover:underline">
+                            {o.aluno?.nome || "Aluno não encontrado"}
+                          </span>
+                        </Link>{" "}
+                        - {o.tipo?.nome || "Tipo desconhecido"}
+                      </li>
+                    ))
+                ) : (
+                  <p className="text-gray-500">Nenhuma ocorrência encontrada.</p>
+                )}
               </ul>
             </CardContent>
           </Card>
@@ -179,7 +194,9 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Button onClick={() => setIsAddModalOpen(true)}>Adicionar Ocorrência</Button>
+                  <Button onClick={() => setIsAddModalOpen(true)}>
+                    Adicionar Ocorrência
+                  </Button>
                   <Button asChild>
                     <Link href="/profiles/student">Gerenciar Alunos</Link>
                   </Button>
@@ -205,7 +222,7 @@ export default function Dashboard() {
       {isTurmaModalOpen && (
         <ModalTurmaOccurrences
           isOpen={isTurmaModalOpen}
-          onClose={() => setIsTurmaModalOpen(false)}
+          onClose={handleCloseTurmaModal}
           occurrences={selectedTurmaOccurrences}
         />
       )}
