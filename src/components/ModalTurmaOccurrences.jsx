@@ -34,7 +34,7 @@ export default function ModalOccurrences({ isOpen, onClose, occurrences }) {
                       }`}
                     >
                       <td className="px-2 py-2 truncate">
-                        {new Date(occurrence.data).toLocaleDateString()}
+                        {new Date(occurrence.data).toLocaleDateString("pt-br")}
                       </td>
                       <td className="px-2 py-2">
                         {occurrence.aluno?.nome ? (

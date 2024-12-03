@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 
-export default function ModalEditStudent({ isOpen, onClose, student, onStudentUpdated }) {
+export default function ModalEditStudent({ isOpen, onClose, student, onStudentUpdated, refetchStudent, setLoadingState }) {
     const [formData, setFormData] = useState({
         nome: student?.nome || "",
         email: student?.email || "",
@@ -24,13 +24,13 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
         if (file) {
             try {
                 const options = {
-                    maxSizeMB: 0.5, // Tamanho máximo em MB
-                    maxWidthOrHeight: 800, // Largura ou altura máxima em pixels
+                    maxSizeMB: 0.5,
+                    maxWidthOrHeight: 800,
                     useWebWorker: true,
                 };
                 const compressedFile = await imageCompression(file, options);
                 const base64Image = await convertToBase64(compressedFile);
-                setFormData((prev) => ({ ...prev, foto: base64Image.split(",")[1] })); // Remove o prefixo 'data:image/jpeg;base64,'
+                setFormData((prev) => ({ ...prev, foto: base64Image.split(",")[1] }));
             } catch (error) {
                 console.error("Erro ao comprimir a imagem:", error);
                 toast.error("Erro ao comprimir a imagem.");
@@ -51,6 +51,7 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
         e.preventDefault();
 
         try {
+            setLoadingState(true);
             const response = await fetch(`/api/students/${student.id}`, {
                 method: "PUT",
                 headers: {
@@ -60,7 +61,7 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
                     nome: formData.nome,
                     email: formData.email,
                     data_nascimento: formData.data_nascimento,
-                    foto: formData.foto, // Envia a imagem comprimida em Base64
+                    foto: formData.foto,
                 }),
             });
 
@@ -70,9 +71,16 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
             toast.success("Aluno atualizado com sucesso!");
             onStudentUpdated(updatedStudent);
             onClose();
+
+            // Aguarda meio segundo e busca os dados novamente
+            setTimeout(() => {
+                refetchStudent();
+            }, 1500);
         } catch (error) {
             console.error("Erro ao atualizar aluno:", error);
             toast.error("Erro ao atualizar aluno.");
+        } finally {
+            //setLoadingState(false);
         }
     };
 
@@ -83,7 +91,6 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
                     <DialogTitle>Editar Aluno</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Campos de entrada */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Nome</label>
                         <Input
@@ -111,7 +118,6 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
                             required
                         />
                     </div>
-                    {/* Upload da imagem */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Foto</label>
                         <Input type="file" accept="image/*" onChange={handleFileChange} />

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Trash, Camera, Loader } from "lucide-react";
 import Link from "next/link";
 import ModalEditStudent from "@/components/ModalEditStudent";
 
@@ -34,6 +34,10 @@ export default function PerfilAluno() {
   const [sortOrder, setSortOrder] = useState("asc");
   const [showResolved, setShowResolved] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [isImageLoading, setIsImageLoading] = useState(false);
+
   const toggleSortOrder = () => {
     const newSortOrder = sortOrder === "asc" ? "desc" : "asc"; // Inverte a ordem
     setSortOrder(newSortOrder);
@@ -45,6 +49,36 @@ export default function PerfilAluno() {
     });
 
     setFilteredOccurrences(sortedOccurrences);
+  };
+
+  const fetchStudentData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/students/${selectedStudentId}`);
+      if (!response.ok) throw new Error("Erro ao buscar estudante");
+      const data = await response.json();
+      if (data.foto && data.foto.type === "Buffer" && Array.isArray(data.foto.data)) {
+        const base64String = `data:image/jpeg;base64,${Buffer.from(data.foto.data).toString("base64")}`;
+        data.foto = base64String;
+      }
+      setStudentData(data);
+
+      const occurrencesResponse = await fetch(`/api/students/${selectedStudentId}/occurrences`);
+      if (!occurrencesResponse.ok) throw new Error("Erro ao buscar ocorrências");
+      const occurrencesData = await occurrencesResponse.json();
+      setOccurrences(occurrencesData);
+      setFilteredOccurrences(occurrencesData);
+
+      const pastClassesResponse = await fetch(`/api/students/${selectedStudentId}/past-classes`);
+      if (!pastClassesResponse.ok) throw new Error("Erro ao buscar histórico de turmas");
+      const pastClassesData = await pastClassesResponse.json();
+      setPastClasses(pastClassesData);
+    } catch (error) {
+      console.error("Erro ao carregar dados do estudante:", error);
+      toast.error("Erro ao carregar os dados do estudante.");
+    } finally {
+      setIsLoading(false)
+    }
   };
 
   const handleSaveOccurrence = async (occurrenceId, updatedData) => {
@@ -152,33 +186,6 @@ export default function PerfilAluno() {
 
   useEffect(() => {
     if (selectedStudentId) {
-      const fetchStudentData = async () => {
-        try {
-          const response = await fetch(`/api/students/${selectedStudentId}`);
-          if (!response.ok) throw new Error("Erro ao buscar estudante");
-          const data = await response.json();
-          if (data.foto && data.foto.type === "Buffer" && Array.isArray(data.foto.data)) {
-            const base64String = `data:image/jpeg;base64,${Buffer.from(data.foto.data).toString("base64")}`;
-            data.foto = base64String;
-          }
-          setStudentData(data);
-
-          const occurrencesResponse = await fetch(`/api/students/${selectedStudentId}/occurrences`);
-          if (!occurrencesResponse.ok) throw new Error("Erro ao buscar ocorrências");
-          const occurrencesData = await occurrencesResponse.json();
-          setOccurrences(occurrencesData);
-          setFilteredOccurrences(occurrencesData);
-
-          const pastClassesResponse = await fetch(`/api/students/${selectedStudentId}/past-classes`);
-          if (!pastClassesResponse.ok) throw new Error("Erro ao buscar histórico de turmas");
-          const pastClassesData = await pastClassesResponse.json();
-          setPastClasses(pastClassesData);
-        } catch (error) {
-          console.error("Erro ao carregar dados do estudante:", error);
-          toast.error("Erro ao carregar os dados do estudante.");
-        }
-      };
-
       fetchStudentData();
     }
   }, [selectedStudentId]);
@@ -221,6 +228,22 @@ export default function PerfilAluno() {
   const openModal = (description: string) => {
     setSelectedDescription(description);
     setIsModalOpen(true);
+  };
+
+  const loadStudentPhoto = async () => {
+    setIsImageLoading(true); // Define estado de carregamento
+    try {
+      const response = await fetch(`/api/students/${selectedStudentId}/photo`);
+      if (!response.ok) throw new Error("Erro ao carregar foto.");
+      const { foto } = await response.json();
+      setStudentData((prev) => ({ ...prev, foto }));
+      toast.success("Foto carregada com sucesso!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao carregar foto.");
+    } finally {
+      setIsImageLoading(false); // Remove estado de carregamento
+    }
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -293,48 +316,78 @@ export default function PerfilAluno() {
                   <h3 className="text-xl font-semibold mb-4 text-gray-700">Dados Pessoais</h3>
                 </CardHeader>
                 <CardContent>
-                  {studentData.foto ? (
-                    <img
-                      src={studentData.foto}
-                      alt="Foto do Aluno"
-                      className="w-32 h-40 object-cover border rounded-md mb-4 cursor-pointer"
-                      loading="lazy"
-                      onClick={() => setIsImageModalOpen(true)} // Abre o modal ao clicar
-                    />
-                  ) : (
-                    <p className="text-gray-600 mb-4">Foto não disponível.</p>
-                  )}
-                  <p className="mb-2">
-                    <strong>Nome:</strong> {studentData.nome}
-                  </p>
-                  <p className="mb-2">
-                    <strong>Email:</strong> {studentData.email}
-                  </p>
-                  <p className="mb-2">
-                    <strong>Data de Nascimento:</strong>{" "}
-                    {new Date(studentData.data_nascimento).toLocaleDateString()}
-                  </p>
-                  <p className="mb-2">
-                    <strong>Turma Atual:</strong> {studentData.turma?.nome} - {studentData.turma?.ano || "Não atribuída"}
-                  </p>
-                  {pastClasses.length > 0 && (
-                    <div className="mt-4">
-                      <strong>Turmas Passadas:</strong>
-                      <ul className="list-disc pl-5">
-                        {pastClasses.map((turma) => (
-                          <li key={turma.id}>
-                            <Link href={`/turmas/${turma.id}`}>
-                              <span className="text-blue-600 hover:underline">
-                                {turma.nome} - {turma.ano}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-32">
+                      <Loader className="animate-spin w-10 h-10 text-gray-500" />
                     </div>
+                  ) : studentData ? (
+                    <div>
+                      {/* Exibição da foto */}
+                      {studentData.foto ? (
+                        <img
+                          src={studentData.foto}
+                          alt="Foto do Aluno"
+                          className="w-32 h-40 object-cover border rounded-md mb-4 cursor-pointer"
+                          loading="lazy"
+                          onClick={() => setIsImageModalOpen(true)} // Abre o modal ao clicar
+                        />
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <Button onClick={loadStudentPhoto} className="flex items-center space-x-2">
+                            <Camera className="w-5 h-5" />
+                            <span>Carregar Foto</span>
+                          </Button>
+                          {isImageLoading && (
+                            <div className="flex items-center space-x-2">
+                              <Loader className="animate-spin w-5 h-5" />
+                              <span>Carregando...</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Detalhes do aluno */}
+                      <p className="mb-2">
+                        <strong>Nome:</strong> {studentData.nome || "Não disponível"}
+                      </p>
+                      <p className="mb-2">
+                        <strong>Email:</strong> {studentData.email || "Não disponível"}
+                      </p>
+                      <p className="mb-2">
+                        <strong>Data de Nascimento:</strong>{" "}
+                        {studentData.data_nascimento
+                          ? new Date(studentData.data_nascimento).toLocaleDateString("pt-br")
+                          : "Não disponível"}
+                      </p>
+                      <p className="mb-2">
+                        <strong>Turma Atual:</strong>{" "}
+                        {studentData.turma?.nome ? `${studentData.turma.nome} - ${studentData.turma.ano}` : "Não atribuída"}
+                      </p>
+
+                      {/* Histórico de turmas passadas */}
+                      {pastClasses.length > 0 && (
+                        <div className="mt-4">
+                          <strong>Turmas Passadas:</strong>
+                          <ul className="list-disc pl-5">
+                            {pastClasses.map((turma) => (
+                              <li key={turma.id}>
+                                <Link href={`/turmas/${turma.id}`}>
+                                  <span className="text-blue-600 hover:underline">
+                                    {turma.nome} - {turma.ano}
+                                  </span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">Nenhum aluno encontrado.</p>
                   )}
                 </CardContent>
               </Card>
+
 
               <div className="col-span-2">
                 <Card>
@@ -411,14 +464,14 @@ export default function PerfilAluno() {
                           <tr
                             key={occurrence.id}
                             className={`border-t border-gray-200 ${occurrence.tipo?.gravidade >= 3
-                                ? "bg-red-200"
-                                : occurrence.tipo?.gravidade === 2
-                                  ? "bg-yellow-100"
-                                  : "bg-green-100"
+                              ? "bg-red-200"
+                              : occurrence.tipo?.gravidade === 2
+                                ? "bg-yellow-100"
+                                : "bg-green-100"
                               }`}
                           >
                             <td className="py-3 px-4">
-                              {new Date(occurrence.data).toLocaleDateString()}
+                              {new Date(occurrence.data).toLocaleDateString("pt-br")}
                             </td>
                             <td className="py-3 px-4">{occurrence.tipo?.nome || "Desconhecido"}</td>
                             <td
@@ -459,6 +512,8 @@ export default function PerfilAluno() {
                   onClose={() => setIsEditModalOpen(false)}
                   student={studentData}
                   onStudentUpdated={handleStudentUpdated}
+                  refetchStudent={fetchStudentData}
+                  setLoadingState={setIsLoading}
                 />
               </div>
             </div>
@@ -505,7 +560,7 @@ export default function PerfilAluno() {
                   onClick={(e) => e.stopPropagation()} // Impede o fechamento ao clicar no conteúdo
                 >
                   <h2 className="text-xl font-semibold mb-4">Tratar Ocorrência</h2>
-                  <p><strong>Data:</strong> {new Date(selectedOccurrence.data).toLocaleDateString()}</p>
+                  <p><strong>Data:</strong> {new Date(selectedOccurrence.data).toLocaleDateString("pt-br")}</p>
                   <p><strong>Tipo:</strong> {selectedOccurrence.tipo?.nome || "Não especificado"}</p>
 
                   <label className="block text-sm font-medium text-gray-700 mt-4">

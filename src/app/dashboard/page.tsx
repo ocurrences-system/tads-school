@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import ModalAddOccurrence from "@/components/ModalAddOccurrence";
 import ModalTurmaOccurrences from "@/components/ModalTurmaOccurrences";
+import { formatDate } from "@/utils/formatDate";
 import { useSession } from "next-auth/react";
 import {
   Chart as ChartJS,

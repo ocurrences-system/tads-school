@@ -4,14 +4,13 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
-// GET - Lista todas as ocorrências
 export async function GET() {
   try {
     const occurrences = await prisma.occurrence.findMany({
       include: {
         aluno: {
           include: {
-            turma: true, // Inclui os detalhes da turma
+            turma: true,
           },
         },
         tipo: true,
@@ -29,13 +28,11 @@ export async function GET() {
   }
 }
 
-// POST - Cria uma nova ocorrência
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { alunoId, data, tipoId, descricao, decisao, usuarioId } = body;
 
-    // Validação dos dados recebidos
     if (!alunoId || !data || !tipoId || !descricao || !usuarioId) {
       return NextResponse.json(
         { error: "Todos os campos (alunoId, data, tipoId, descricao, usuarioId) são obrigatórios." },
@@ -43,7 +40,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validação se o aluno existe
     const aluno = await prisma.student.findUnique({ where: { id: alunoId } });
     if (!aluno) {
       return NextResponse.json(
@@ -52,7 +48,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validação se o tipo de ocorrência existe
     const tipo = await prisma.tipo.findUnique({ where: { id: tipoId } });
     if (!tipo) {
       return NextResponse.json(
@@ -61,7 +56,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validação se o usuário existe
     const usuario = await prisma.user.findUnique({ where: { id: usuarioId } });
     if (!usuario) {
       return NextResponse.json(
@@ -70,15 +64,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Criação da ocorrência
     const newOccurrence = await prisma.occurrence.create({
       data: {
         alunoId,
         usuarioId,
-        tipoId, // Relaciona com o tipo de ocorrência
+        tipoId,
         data: new Date(data),
         descricao,
-        decisao: decisao || "", // Decisão pode ser opcional inicialmente
+        decisao: decisao || "",
       },
     });
 
@@ -86,7 +79,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Erro ao criar ocorrência:", error);
 
-    // Tratamento de erro de chave estrangeira
     if (
       error instanceof PrismaClientKnownRequestError &&
       error.code === "P2003"
