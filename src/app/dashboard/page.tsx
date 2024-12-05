@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import Link from "next/link";
 import ModalAddOccurrence from "@/components/ModalAddOccurrence";
 import ModalTurmaOccurrences from "@/components/ModalTurmaOccurrences";
-import { formatDate } from "@/utils/formatDate";
 import { useSession } from "next-auth/react";
 import {
   Chart as ChartJS,
@@ -79,17 +78,23 @@ export default function Dashboard() {
 
   const getTurmaOccurrences = () => {
     const turmaCounts = {};
-    ocorrencias.forEach((ocorrencia) => {
-      const turmaName = ocorrencia.aluno?.turma
-        ? `${ocorrencia.aluno.turma.nome} (${ocorrencia.aluno.turma.ano})`
-        : "Turma Desconhecida";
-      turmaCounts[turmaName] = (turmaCounts[turmaName] || 0) + 1;
-    });
+
+    ocorrencias
+      .filter((ocorrencia) =>
+        selectedTurma ? ocorrencia.aluno?.turma?.id === selectedTurma.id : true
+      )
+      .forEach((ocorrencia) => {
+        const turmaName = ocorrencia.aluno?.turma
+          ? `${ocorrencia.aluno.turma.nome} (${ocorrencia.aluno.turma.ano})`
+          : "Turma Desconhecida";
+        turmaCounts[turmaName] = (turmaCounts[turmaName] || 0) + 1;
+      });
+
     return {
       labels: Object.keys(turmaCounts),
       datasets: [
         {
-          label: "Ocorrências por Turma",
+          label: `Ocorrências ${selectedTurma ? `- ${selectedTurma.nome} (${selectedTurma.ano})` : "por Turma"}`,
           data: Object.values(turmaCounts),
           backgroundColor: "rgba(75, 192, 192, 0.2)",
           borderColor: "rgba(75, 192, 192, 1)",
@@ -133,24 +138,54 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
-              <h3 className="font-semibold text-lg">Ocorrências em Aberto</h3>
+              <h3 className="font-semibold text-lg">
+                {selectedTurma
+                  ? `Ocorrências em Aberto - ${selectedTurma.nome} (${selectedTurma.ano})`
+                  : "Ocorrências em Aberto - Todas as Turmas"}
+              </h3>
             </CardHeader>
             <CardContent>
               <ul className="list-disc pl-5">
-                {filteredOccurrences.length > 0 ? (
-                  filteredOccurrences
-                    .filter((o) => o.resolvida === false) // Filtra apenas as ocorrências não resolvidas
-                    .slice(0, 5)
-                    .map((o) => (
-                      <li key={o.id}>
-                        <Link href={`/profiles/student?id=${o.aluno?.id}`}>
-                          <span className="text-blue-600 hover:underline">
-                            {o.aluno?.nome || "Aluno não encontrado"}
-                          </span>
-                        </Link>{" "}
-                        - {o.tipo?.nome || "Tipo desconhecido"}
-                      </li>
-                    ))
+                {ocorrencias.length > 0 &&
+                  ocorrencias.some((o) =>
+                    selectedTurma
+                      ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
+                      : !o.resolvida
+                  ) ? (
+                  <>
+                    {ocorrencias
+                      .filter((o) =>
+                        selectedTurma
+                          ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
+                          : !o.resolvida // Filtra apenas as não resolvidas
+                      )
+                      .slice(0, 10) // Exibe no máximo 10 ocorrências
+                      .map((o) => (
+                        <li key={o.id}>
+                          <Link href={`/profiles/student?id=${o.aluno?.id}`}>
+                            <span className="text-blue-600 hover:underline">
+                              {o.aluno?.nome || "Aluno não encontrado"}
+                            </span>
+                          </Link>{" "}
+                          - {o.tipo?.nome || "Tipo desconhecido"}
+                        </li>
+                      ))}
+                    {ocorrencias.filter((o) =>
+                      selectedTurma
+                        ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
+                        : !o.resolvida
+                    ).length > 10 && (
+                        <p className="text-gray-500 mt-2">
+                          (+{" "}
+                          {ocorrencias.filter((o) =>
+                            selectedTurma
+                              ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
+                              : !o.resolvida
+                          ).length - 10}
+                          ...)
+                        </p>
+                      )}
+                  </>
                 ) : (
                   <p className="text-gray-500">Nenhuma ocorrência encontrada.</p>
                 )}
@@ -165,8 +200,12 @@ export default function Dashboard() {
                   <h3 className="font-semibold text-lg">Estatísticas</h3>
                   <select
                     className="border rounded p-2"
-                    value={selectedTurma}
-                    onChange={(e) => setSelectedTurma(e.target.value)}
+                    value={selectedTurma?.id || ""}
+                    onChange={(e) => {
+                      const turmaId = e.target.value;
+                      const turma = turmas.find((t) => t.id === turmaId);
+                      setSelectedTurma(turma ? { id: turma.id, nome: turma.nome, ano: turma.ano } : null);
+                    }}
                   >
                     <option value="">Todas as Turmas</option>
                     {turmas.map((turma) => (

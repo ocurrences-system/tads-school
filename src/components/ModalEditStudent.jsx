@@ -12,7 +12,7 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
         nome: student?.nome || "",
         email: student?.email || "",
         data_nascimento: student?.data_nascimento?.split("T")[0] || "",
-        foto: student?.foto || null,
+        foto: null,
     });
 
     const handleInputChange = (key, value) => {

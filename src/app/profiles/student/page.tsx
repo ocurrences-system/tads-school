@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Pencil, Trash, Camera, Loader } from "lucide-react";
 import Link from "next/link";
 import ModalEditStudent from "@/components/ModalEditStudent";
+import ModalStudentImage from "@/components/ModalStudentImage";
 
 export default function PerfilAluno() {
   const router = useRouter();
@@ -35,8 +36,6 @@ export default function PerfilAluno() {
   const [showResolved, setShowResolved] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
-
-  const [isImageLoading, setIsImageLoading] = useState(false);
 
   const toggleSortOrder = () => {
     const newSortOrder = sortOrder === "asc" ? "desc" : "asc"; // Inverte a ordem
@@ -230,22 +229,6 @@ export default function PerfilAluno() {
     setIsModalOpen(true);
   };
 
-  const loadStudentPhoto = async () => {
-    setIsImageLoading(true); // Define estado de carregamento
-    try {
-      const response = await fetch(`/api/students/${selectedStudentId}/photo`);
-      if (!response.ok) throw new Error("Erro ao carregar foto.");
-      const { foto } = await response.json();
-      setStudentData((prev) => ({ ...prev, foto }));
-      toast.success("Foto carregada com sucesso!");
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao carregar foto.");
-    } finally {
-      setIsImageLoading(false); // Remove estado de carregamento
-    }
-  };
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDescription, setSelectedDescription] = useState("");
 
@@ -310,10 +293,10 @@ export default function PerfilAluno() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader>
-                  <h3 className="text-xl font-semibold mb-4 text-gray-700">Dados Pessoais</h3>
+                  <h3 className="text-xl font-semibold text-gray-700">Dados Pessoais</h3>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? (
@@ -332,18 +315,7 @@ export default function PerfilAluno() {
                           onClick={() => setIsImageModalOpen(true)} // Abre o modal ao clicar
                         />
                       ) : (
-                        <div className="flex items-center space-x-2">
-                          <Button onClick={loadStudentPhoto} className="flex items-center space-x-2">
-                            <Camera className="w-5 h-5" />
-                            <span>Carregar Foto</span>
-                          </Button>
-                          {isImageLoading && (
-                            <div className="flex items-center space-x-2">
-                              <Loader className="animate-spin w-5 h-5" />
-                              <span>Carregando...</span>
-                            </div>
-                          )}
-                        </div>
+                        <p className="text-gray-500 text-sm italic mb-6">Este aluno não possui uma foto cadastrada.</p>
                       )}
 
                       {/* Detalhes do aluno */}
@@ -518,6 +490,12 @@ export default function PerfilAluno() {
               </div>
             </div>
 
+            <ModalStudentImage
+              isOpen={isImageModalOpen}
+              onClose={() => setIsImageModalOpen(false)}
+              imageSrc={studentData?.foto || null} // Passa a foto do aluno
+            />
+
             {isModalOpen && (
               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
@@ -528,24 +506,6 @@ export default function PerfilAluno() {
                       Fechar
                     </Button>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {isImageModalOpen && (
-              <div
-                className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-                onClick={() => setIsImageModalOpen(false)} // Fecha o modal ao clicar fora
-              >
-                <div
-                  className="bg-white p-4 rounded-md shadow-lg"
-                  onClick={(e) => e.stopPropagation()} // Impede o fechamento ao clicar na imagem
-                >
-                  <img
-                    src={studentData.foto}
-                    alt="Foto Ampliada do Aluno"
-                    className="w-auto max-w-full max-h-[80vh] object-contain"
-                  />
                 </div>
               </div>
             )}

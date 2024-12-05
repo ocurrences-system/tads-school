@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -14,11 +15,12 @@ const authOptions = {
       },
       async authorize(credentials) {
         const { login, password } = credentials || {};
-      
+
         if (!login || !password) {
           throw new Error("Login e senha são obrigatórios.");
         }
-      
+
+        // Busca o usuário pelo login
         const user = await prisma.user.findUnique({
           where: { login },
           select: {
@@ -38,11 +40,14 @@ const authOptions = {
         if (!user) {
           throw new Error("Credenciais inválidas.");
         }
-      
-        if (user.senha !== password) {
-          throw new Error("Credenciais inválidas.");
+
+        // Verifica a senha usando bcrypt
+        const isPasswordCorrect = await bcrypt.compare(password, user.senha);
+        if (!isPasswordCorrect) {
+          throw new Error("Senha inválida.");
         }
-      
+
+        // Retorna as informações necessárias do usuário
         return {
           id: user.id,
           name: user.nome,

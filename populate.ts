@@ -1,8 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
 async function main() {
+
   // Limpa os dados existentes
   await prisma.tipoCounter.deleteMany();
   await prisma.occurrence.deleteMany();
@@ -24,13 +26,17 @@ async function main() {
 
   console.log("Funções criadas:", [adminFuncao, pedagogaFuncao]);
 
+  // Geração de hashes para as senhas
+  const hashedAdminPassword = await bcrypt.hash("admin", 10);
+  const hashedPedagogaPassword = await bcrypt.hash("pedagoga", 10);
+
   // Criação de usuários
   const usuarioAdmin = await prisma.user.create({
     data: {
       id: "1",
       nome: "Administrador",
       login: "admin",
-      senha: "admin", // Use hash em produção
+      senha: hashedAdminPassword, // Salva a senha com hash
       funcaoId: adminFuncao.id,
     },
   });
@@ -40,7 +46,7 @@ async function main() {
       id: "2",
       nome: "Pedagoga",
       login: "pedagoga",
-      senha: "pedagoga", // Use hash em produção
+      senha: hashedPedagogaPassword, // Salva a senha com hash
       funcaoId: pedagogaFuncao.id,
     },
   });

@@ -1,43 +1,40 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "next-auth/next";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
-    try {
-        // Obtém a sessão do usuário autenticado
-        const session = await getServerSession(authOptions);
+  try {
+    // Obter sessão
+    const session = await getServerSession();
 
-        if (!session) {
-            return NextResponse.json({ message: "Não autenticado" }, { status: 401 });
-        }
+    console.log(session);
 
-        // Busca o usuário no banco de dados com base no ID da sessão
-        const user = await prisma.user.findUnique({
-            where: { login },
-            select: {
-                id: true,
-                nome: true,
-                login: true,
-                senha: true,
-                funcao: {
-                    select: {
-                        nome: true,
-                    },
-                },
-                foto: true,
-            },
-        });
-
-        if (!user) {
-            return NextResponse.json({ message: "Usuário não encontrado" }, { status: 404 });
-        }
-
-        return NextResponse.json(user, { status: 200 });
-    } catch (error) {
-        console.error("Erro ao buscar dados do usuário:", error);
-        return NextResponse.json({ message: "Erro no servidor" }, { status: 500 });
+    if (!session?.user?.login) {
+      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 });
     }
+
+    // Buscar usuário pelo login
+    const user = await prisma.user.findUnique({
+      where: { login: session.user.login },
+      select: {
+        id: true,
+        nome: true,
+        login: true,
+        foto: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json(user);
+  } catch (error) {
+    console.error("Erro ao buscar dados do usuário:", error);
+    return NextResponse.json({ error: "Erro interno ao buscar usuário." }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
 }

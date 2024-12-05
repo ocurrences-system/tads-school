@@ -3,12 +3,15 @@
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
+import bcrypt from "bcrypt";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const hashFromDB = "$2b$10$tITEQLMqwHxnTRMzA272iut95GCQqG0RxAuXuYjSEwhvLb5TnlRFS";
+  const senha = "admin";
 
   // Exibe mensagem de erro se houver parâmetro de erro na URL
   useEffect(() => {
@@ -33,7 +36,6 @@ export default function LoginPage() {
         redirect: true, // Habilita redirecionamento automático
         callbackUrl: "/dashboard", // Página para redirecionar após o login
       });
-
       if (result?.error) {
         setError("Credenciais inválidas. Tente novamente.");
       }

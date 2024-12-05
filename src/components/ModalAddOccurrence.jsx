@@ -1,20 +1,35 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded }) {
+  const currentYear = new Date().getFullYear();
+  const currentDate = new Date().toISOString().split("T")[0]; // Data no formato YYYY-MM-DD
   const [formData, setFormData] = useState({
     turmaId: "",
     alunoId: "",
     tipoId: "",
-    data: "",
+    data: currentDate, // Data padrão
     descricao: "",
   });
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [turmas, setTurmas] = useState([]);
+  const [filteredTurmas, setFilteredTurmas] = useState([]);
   const [alunos, setAlunos] = useState([]);
   const [tiposOcorrencia, setTiposOcorrencia] = useState([]);
 
@@ -34,6 +49,11 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
 
     fetchTurmas();
   }, []);
+
+  // Filtrar turmas pelo ano selecionado
+  useEffect(() => {
+    setFilteredTurmas(turmas.filter((turma) => turma.ano === selectedYear));
+  }, [selectedYear, turmas]);
 
   // Fetch de tipos de ocorrência
   useEffect(() => {
@@ -77,7 +97,7 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (
       !formData.alunoId ||
       !formData.tipoId ||
@@ -87,7 +107,7 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
       toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
-  
+
     try {
       const response = await fetch("/api/occurrences", {
         method: "POST",
@@ -100,12 +120,12 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
           usuarioId: "1", // ID fixo do usuário de teste
         }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Erro ao criar ocorrência.");
       }
-  
+
       const newOccurrence = await response.json();
       toast.success("Ocorrência cadastrada com sucesso!");
       onOccurrenceAdded(newOccurrence);
@@ -124,6 +144,26 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
+            {/* Selecionar Ano */}
+            <div>
+              <Label>Ano</Label>
+              <Select
+                defaultValue={currentYear.toString()} // Define o texto padrão como o ano atual
+                onValueChange={(value) => setSelectedYear(Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={currentYear.toString()} />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...new Set(turmas.map((turma) => turma.ano))].map((ano) => (
+                    <SelectItem key={ano} value={ano.toString()}>
+                      {ano}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Selecionar Turma */}
             <div>
               <Label>Turma</Label>
@@ -132,7 +172,7 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
                   <SelectValue placeholder="Selecione uma turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  {turmas.map((turma) => (
+                  {filteredTurmas.map((turma) => (
                     <SelectItem key={turma.id} value={turma.id}>
                       {turma.nome}
                     </SelectItem>
