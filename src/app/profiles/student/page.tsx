@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Pencil, Trash, Camera, Loader } from "lucide-react";
+import { Pencil, Trash, Camera, Loader, Eye, Mail, Phone, User, Smartphone } from "lucide-react";
 import Link from "next/link";
 import ModalEditStudent from "@/components/ModalEditStudent";
 import ModalStudentImage from "@/components/ModalStudentImage";
+import ModalOccurrenceDescription from "@/components/ModalOccurrenceDescription";
 
 export default function PerfilAluno() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function PerfilAluno() {
   const [isSearching, setIsSearching] = useState(!alunoIdFromURL);
   const [pastClasses, setPastClasses] = useState([]); // Histórico de turmas passadas
   const [selectedOccurrence, setSelectedOccurrence] = useState(null); // Ocorrência selecionada
+  const [selectedOccurrenceDesc, setSelectedOccurrenceDesc] = useState(null); // Ocorrência selecionada
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false); // Controle do modal de imagem
@@ -33,7 +35,8 @@ export default function PerfilAluno() {
 
   const [filterSeverity, setFilterSeverity] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [showResolved, setShowResolved] = useState(false);
+  const [showResolved, setShowResolved] = useState(true);
+  const [showUnresolved, setShowUnresolved] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,30 +56,58 @@ export default function PerfilAluno() {
   const fetchStudentData = async () => {
     try {
       setIsLoading(true);
+
+      // Busca os dados do estudante
       const response = await fetch(`/api/students/${selectedStudentId}`);
       if (!response.ok) throw new Error("Erro ao buscar estudante");
+
       const data = await response.json();
-      if (data.foto && data.foto.type === "Buffer" && Array.isArray(data.foto.data)) {
-        const base64String = `data:image/jpeg;base64,${Buffer.from(data.foto.data).toString("base64")}`;
-        data.foto = base64String;
+
+      // Converte o caminho da foto em uma URL completa, se estiver disponível
+      if (data.fotoPath) {
+        data.foto = `${data.fotoPath}`;
       }
+
       setStudentData(data);
 
-      const occurrencesResponse = await fetch(`/api/students/${selectedStudentId}/occurrences`);
-      if (!occurrencesResponse.ok) throw new Error("Erro ao buscar ocorrências");
+      // Busca as ocorrências do estudante
+      const occurrencesResponse = await fetch(
+        `/api/students/${selectedStudentId}/occurrences`
+      );
+      if (!occurrencesResponse.ok)
+        throw new Error("Erro ao buscar ocorrências");
+
       const occurrencesData = await occurrencesResponse.json();
       setOccurrences(occurrencesData);
       setFilteredOccurrences(occurrencesData);
 
-      const pastClassesResponse = await fetch(`/api/students/${selectedStudentId}/past-classes`);
-      if (!pastClassesResponse.ok) throw new Error("Erro ao buscar histórico de turmas");
+      // Busca o histórico de turmas passadas do estudante
+      const pastClassesResponse = await fetch(
+        `/api/students/${selectedStudentId}/past-classes`
+      );
+      if (!pastClassesResponse.ok)
+        throw new Error("Erro ao buscar histórico de turmas");
+
       const pastClassesData = await pastClassesResponse.json();
       setPastClasses(pastClassesData);
     } catch (error) {
       console.error("Erro ao carregar dados do estudante:", error);
       toast.error("Erro ao carregar os dados do estudante.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
+    }
+  };
+
+  const fetchOccurrences = async () => {
+    try {
+      const response = await fetch(`/api/students/${alunoIdFromURL}/occurrences`);
+      if (!response.ok) throw new Error("Erro ao buscar ocorrências");
+      const data = await response.json();
+      setOccurrences(data);
+      setFilteredOccurrences(data);
+    } catch (error) {
+      console.error("Erro ao carregar ocorrências:", error);
+      toast.error("Erro ao carregar as ocorrências.");
     }
   };
 
@@ -137,11 +168,6 @@ export default function PerfilAluno() {
     }
   };
 
-  const handleResolvedToggle = () => {
-    const filtered = occurrences.filter((o) => o.resolvida === showResolved);
-    setFilteredOccurrences(filtered);
-    setShowResolved(!showResolved);
-  };
 
   const handleStudentUpdated = (updatedStudent) => {
     setStudentData(updatedStudent);
@@ -189,6 +215,29 @@ export default function PerfilAluno() {
     }
   }, [selectedStudentId]);
 
+  useEffect(() => {
+    fetchOccurrences();
+  }, [alunoIdFromURL]);
+
+  useEffect(() => {
+    const filtered = occurrences.filter((o) => {
+      const matchesSeverity = filterSeverity
+        ? o.tipo?.gravidade === parseInt(filterSeverity)
+        : true;
+
+      const matchesText =
+        o.descricao?.toLowerCase().includes(searchText.toLowerCase()) ||
+        o.decisao?.toLowerCase().includes(searchText.toLowerCase());
+
+      const matchesResolved = showResolved && o.resolvida;
+      const matchesUnresolved = showUnresolved && !o.resolvida;
+
+      return matchesSeverity && matchesText && (matchesResolved || matchesUnresolved);
+    });
+
+    setFilteredOccurrences(filtered);
+  }, [occurrences, filterSeverity, searchText, showResolved, showUnresolved]);
+
   const handleStudentSelection = (studentId) => {
     setSelectedStudentId(studentId);
     setIsSearching(false);
@@ -208,7 +257,6 @@ export default function PerfilAluno() {
     setIsOccurrenceModalOpen(true);
   };
 
-
   const handleFilterChange = (e) => {
     const severity = e.target.value;
     setFilterSeverity(severity);
@@ -219,15 +267,7 @@ export default function PerfilAluno() {
     }
   };
 
-  const handleOccurrenceDecision = (decision) => {
-    toast.success(`Decisão "${decision}" aplicada à ocorrência: ${selectedOccurrence.descricao}`);
-    setIsOccurrenceModalOpen(false);
-  };
 
-  const openModal = (description: string) => {
-    setSelectedDescription(description);
-    setIsModalOpen(true);
-  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDescription, setSelectedDescription] = useState("");
@@ -308,23 +348,45 @@ export default function PerfilAluno() {
                       {/* Exibição da foto */}
                       {studentData.foto ? (
                         <img
-                          src={studentData.foto}
+                          src={studentData.foto} // A URL da imagem será atribuída pelo fetchStudentData
                           alt="Foto do Aluno"
                           className="w-32 h-40 object-cover border rounded-md mb-4 cursor-pointer"
                           loading="lazy"
                           onClick={() => setIsImageModalOpen(true)} // Abre o modal ao clicar
                         />
                       ) : (
-                        <p className="text-gray-500 text-sm italic mb-6">Este aluno não possui uma foto cadastrada.</p>
+                        <p className="text-gray-500 text-sm italic mb-6">
+                          Este aluno não possui uma foto cadastrada.
+                        </p>
                       )}
 
                       {/* Detalhes do aluno */}
                       <p className="mb-2">
                         <strong>Nome:</strong> {studentData.nome || "Não disponível"}
                       </p>
-                      <p className="mb-2">
-                        <strong>Email:</strong> {studentData.email || "Não disponível"}
-                      </p>
+                      {/* Contato */}
+                      <div className="mt-2">
+                        <Card className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+                          <div className="space-y-2">
+                            <p className="flex items-center text-gray-600">
+                              <Mail className="mr-2 text-blue-500" size={18} />
+                              <strong className="mr-2">Email:</strong> {studentData.email || "Não disponível"}
+                            </p>
+                            <p className="flex items-center text-gray-600">
+                              <Phone className="mr-2 text-green-500" size={18} />
+                              <strong className="mr-2">Telefone:</strong> {studentData.tel || "Não disponível"}
+                            </p>
+                            <p className="flex items-center text-gray-600">
+                              <User className="mr-2 text-orange-500" size={18} />
+                              <strong className="mr-2">Email dos Responsaveis:</strong> {studentData.emailP || "Não disponível"}
+                            </p>
+                            <p className="flex items-center text-gray-600">
+                              <Smartphone className="mr-2 text-purple-500" size={18} />
+                              <strong className="mr-2">Telefone dos Responsaveis:</strong> {studentData.telP || "Não disponível"}
+                            </p>
+                          </div>
+                        </Card>
+                      </div>
                       <p className="mb-2">
                         <strong>Data de Nascimento:</strong>{" "}
                         {studentData.data_nascimento
@@ -333,7 +395,9 @@ export default function PerfilAluno() {
                       </p>
                       <p className="mb-2">
                         <strong>Turma Atual:</strong>{" "}
-                        {studentData.turma?.nome ? `${studentData.turma.nome} - ${studentData.turma.ano}` : "Não atribuída"}
+                        {studentData.turma?.nome
+                          ? `${studentData.turma.nome} - ${studentData.turma.ano}`
+                          : "Não atribuída"}
                       </p>
 
                       {/* Histórico de turmas passadas */}
@@ -361,6 +425,7 @@ export default function PerfilAluno() {
               </Card>
 
 
+
               <div className="col-span-2">
                 <Card>
                   <CardHeader>
@@ -381,7 +446,7 @@ export default function PerfilAluno() {
                         <option value="3">Alta</option>
                       </select>
                     </div>
-                    <div>
+                    <div className="mb-4">
                       <label htmlFor="search" className="block text-sm font-medium text-gray-700">
                         Buscar por Texto
                       </label>
@@ -403,80 +468,108 @@ export default function PerfilAluno() {
                         }}
                       />
                     </div>
-                    <div className="flex items-center">
-                      <label htmlFor="resolved" className="block text-sm font-medium text-gray-700">
-                        Resolvidas
-                      </label>
-                      <input
-                        type="checkbox"
-                        id="resolved"
-                        className="ml-2"
-                        checked={showResolved}
-                        onChange={handleResolvedToggle}
-                      />
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <input
+                          type="checkbox"
+                          id="resolved"
+                          className="mr-2"
+                          checked={showResolved}
+                          onChange={() => setShowResolved((prev) => !prev)}
+                        />
+                        <label htmlFor="resolved" className="text-sm">Resolvidas</label>
+                      </div>
+                      <div>
+                        <input
+                          type="checkbox"
+                          id="unresolved"
+                          className="mr-2"
+                          checked={showUnresolved}
+                          onChange={() => setShowUnresolved((prev) => !prev)}
+                        />
+                        <label htmlFor="unresolved" className="text-sm">Não Resolvidas</label>
+                      </div>
                     </div>
                     <Button onClick={toggleSortOrder}>
                       Ordenar por Data ({sortOrder === "asc" ? "Ascendente" : "Descendente"})
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    <table className="min-w-full bg-white">
-                      <thead>
-                        <tr>
-                          <th className="text-left py-3 px-4 text-gray-600">Data</th>
-                          <th className="text-left py-3 px-4 text-gray-600">Tipo</th>
-                          <th className="text-left py-3 px-4 text-gray-600">Descrição</th>
-                          <th className="text-left py-3 px-4 text-gray-600">Gravidade</th>
-                          <th className="text-left py-3 px-4 text-gray-600">Resolvida</th>
-                          <th className="text-left py-3 px-4 text-gray-600">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredOccurrences.map((occurrence) => (
-                          <tr
-                            key={occurrence.id}
-                            className={`border-t border-gray-200 ${occurrence.tipo?.gravidade >= 3
-                              ? "bg-red-200"
-                              : occurrence.tipo?.gravidade === 2
-                                ? "bg-yellow-100"
-                                : "bg-green-100"
-                              }`}
-                          >
-                            <td className="py-3 px-4">
-                              {new Date(occurrence.data).toLocaleDateString("pt-br")}
-                            </td>
-                            <td className="py-3 px-4">{occurrence.tipo?.nome || "Desconhecido"}</td>
-                            <td
-                              className="px-2 py-2 truncate max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer"
-                              onClick={() => openModal(occurrence.descricao)} // Abre o modal para descrição
-                            >
-                              {occurrence.descricao}
-                            </td>
-                            <td className="py-3 px-4">{occurrence.tipo?.gravidade || "N/A"}</td>
-                            <td className="py-3 px-4">{occurrence.resolvida ? "Sim" : "Não"}</td>
-                            <td className="py-3 px-4 flex space-x-4">
-                              {/* Ícone de editar */}
-                              <button
-                                onClick={() => handleOccurrenceClick(occurrence)}
-                                className="text-blue-500 hover:text-blue-700"
-                                aria-label="Editar ocorrência"
-                              >
-                                <Pencil size={20} />
-                              </button>
-                              {/* Ícone de excluir */}
-                              <button
-                                onClick={() => handleDeleteOccurrence(occurrence.id)} // Função para excluir ocorrência
-                                className="text-red-500 hover:text-red-700"
-                                aria-label="Excluir ocorrência"
-                              >
-                                <Trash size={20} />
-                              </button>
-                            </td>
+                    {filteredOccurrences.length === 0 ? (
+                      <p className="text-center text-gray-500 mt-4">
+                        Nenhuma ocorrência encontrada com os filtros aplicados.
+                      </p>
+                    ) : (
+                      <table className="min-w-full bg-white">
+                        <thead>
+                          <tr>
+                            <th className="text-left py-3 px-4 text-gray-600">Data</th>
+                            <th className="text-left py-3 px-4 text-gray-600">Tipo</th>
+                            <th className="text-left py-3 px-4 text-gray-600">Descrição</th>
+                            <th className="text-left py-3 px-4 text-gray-600">Gravidade</th>
+                            <th className="text-left py-3 px-4 text-gray-600">Resolvida</th>
+                            <th className="text-left py-3 px-4 text-gray-600">Ações</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {filteredOccurrences.map((occurrence) => (
+                            <tr
+                              key={occurrence.id}
+                              className={`border-t border-gray-200 ${occurrence.tipo?.gravidade >= 3
+                                ? "bg-red-200"
+                                : occurrence.tipo?.gravidade === 2
+                                  ? "bg-yellow-100"
+                                  : "bg-green-100"
+                                }`}
+                            >
+                              <td className="py-3 px-4">
+                                {new Date(occurrence.data).toLocaleDateString("pt-br")}
+                              </td>
+                              <td className="py-3 px-4">{occurrence.tipo?.nome || "Desconhecido"}</td>
+                              <td className="px-2 py-2 truncate max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">
+                                {occurrence.descricao}
+                              </td>
+                              <td className="py-3 px-4">{occurrence.tipo?.gravidade || "N/A"}</td>
+                              <td className="py-3 px-4">{occurrence.resolvida ? "Sim" : "Não"}</td>
+                              <td className="py-3 px-4 flex space-x-4">
+                                {/* Ícone para ver por completo */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Impede o clique no botão de abrir o modal da linha
+                                    setSelectedOccurrenceDesc(occurrence);
+                                  }}
+                                  className="text-green-500 hover:text-green-700"
+                                  aria-label="Ver por completo"
+                                >
+                                  <Eye size={20} />
+                                </button>
+                                {/* Ícone para editar */}
+                                <button
+                                  onClick={() => {
+                                    handleOccurrenceClick(occurrence);
+                                  }}
+                                  className="text-blue-500 hover:text-blue-700"
+                                  aria-label="Editar ocorrência"
+                                >
+                                  <Pencil size={20} />
+                                </button>
+                                {/* Ícone para excluir */}
+                                <button
+                                  onClick={() => {
+                                    handleDeleteOccurrence(occurrence.id);
+                                  }}
+                                  className="text-red-500 hover:text-red-700"
+                                  aria-label="Excluir ocorrência"
+                                >
+                                  <Trash size={20} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
 
+                      </table>
+                    )}
                   </CardContent>
                 </Card>
                 <ModalEditStudent
@@ -487,7 +580,15 @@ export default function PerfilAluno() {
                   refetchStudent={fetchStudentData}
                   setLoadingState={setIsLoading}
                 />
+                {selectedOccurrenceDesc && (
+                  <ModalOccurrenceDescription
+                    isOpen={!!selectedOccurrenceDesc}
+                    onClose={() => setSelectedOccurrenceDesc(null)}
+                    occurrence={selectedOccurrenceDesc}
+                  />
+                )}
               </div>
+
             </div>
 
             <ModalStudentImage

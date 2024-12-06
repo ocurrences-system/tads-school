@@ -5,46 +5,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import imageCompression from "browser-image-compression";
 
-export default function ModalEditStudent({ isOpen, onClose, student, onStudentUpdated, refetchStudent, setLoadingState }) {
+export default function ModalEditStudent({
+    isOpen,
+    onClose,
+    student,
+    onStudentUpdated,
+    refetchStudent,
+    setLoadingState,
+}) {
     const [formData, setFormData] = useState({
         nome: student?.nome || "",
         email: student?.email || "",
         data_nascimento: student?.data_nascimento?.split("T")[0] || "",
-        foto: null,
+        foto: null, // Armazena o arquivo selecionado
     });
 
     const handleInputChange = (key, value) => {
         setFormData((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleFileChange = async (e) => {
+    const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            try {
-                const options = {
-                    maxSizeMB: 0.5,
-                    maxWidthOrHeight: 800,
-                    useWebWorker: true,
-                };
-                const compressedFile = await imageCompression(file, options);
-                const base64Image = await convertToBase64(compressedFile);
-                setFormData((prev) => ({ ...prev, foto: base64Image.split(",")[1] }));
-            } catch (error) {
-                console.error("Erro ao comprimir a imagem:", error);
-                toast.error("Erro ao comprimir a imagem.");
-            }
+            setFormData((prev) => ({ ...prev, foto: file }));
         }
-    };
-
-    const convertToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-        });
     };
 
     const handleSubmit = async (e) => {
@@ -52,17 +37,19 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
 
         try {
             setLoadingState(true);
+
+            // Cria um FormData para enviar o arquivo e os dados
+            const formDataToSend = new FormData();
+            formDataToSend.append("nome", formData.nome);
+            formDataToSend.append("email", formData.email);
+            formDataToSend.append("data_nascimento", formData.data_nascimento);
+            if (formData.foto) {
+                formDataToSend.append("file", formData.foto); // O arquivo será processado no backend
+            }
+
             const response = await fetch(`/api/students/${student.id}`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    nome: formData.nome,
-                    email: formData.email,
-                    data_nascimento: formData.data_nascimento,
-                    foto: formData.foto,
-                }),
+                body: formDataToSend,
             });
 
             if (!response.ok) throw new Error("Erro ao atualizar aluno");
@@ -80,7 +67,7 @@ export default function ModalEditStudent({ isOpen, onClose, student, onStudentUp
             console.error("Erro ao atualizar aluno:", error);
             toast.error("Erro ao atualizar aluno.");
         } finally {
-            //setLoadingState(false);
+            setLoadingState(false);
         }
     };
 

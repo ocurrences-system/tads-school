@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import path from "path";
+import fs from "fs";
 
 const prisma = new PrismaClient();
+const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+
+// Certifica-se de que a pasta de uploads existe
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 // GET - Retorna os dados de um aluno específico
 export async function GET(
@@ -13,11 +21,11 @@ export async function GET(
   try {
     const student = await prisma.student.findUnique({
       where: { id },
-      include: { 
-        turma: true, // Inclui dados da turma atual
+      include: {
+        turma: true,
         occurrences: {
           include: {
-            tipo: true, // Inclui detalhes do tipo da ocorrência
+            tipo: true,
           },
         },
       },
@@ -48,14 +56,32 @@ export async function PUT(
   const { id } = params;
 
   try {
-    const body = await request.json();
+    const formData = await request.formData();
 
-    const { nome, email, data_nascimento, foto } = body;
+    const nome = formData.get("nome") as string;
+    const email = formData.get("email") as string;
+    const data_nascimento = formData.get("data_nascimento") as string;
+    const file = formData.get("file") as File;
+
     if (!nome || !email || !data_nascimento) {
       return NextResponse.json(
         { error: "Nome, email e data de nascimento são obrigatórios" },
         { status: 400 }
       );
+    }
+
+    let fotoPath: string | undefined;
+
+    if (file) {
+      const buffer = await file.arrayBuffer();
+      const fileName = `${id}-${Date.now()}-${file.name.replace(
+        /[^a-zA-Z0-9.]/g,
+        "_"
+      )}`;
+      const filePath = path.join(UPLOAD_DIR, fileName);
+
+      await fs.promises.writeFile(filePath, Buffer.from(buffer));
+      fotoPath = `/uploads/${fileName}`;
     }
 
     const updatedStudent = await prisma.student.update({
@@ -64,12 +90,12 @@ export async function PUT(
         nome,
         email,
         data_nascimento: new Date(data_nascimento),
-        foto: foto ? Buffer.from(foto, "base64") : undefined, // Salva como Blob
+        fotoPath,
       },
     });
 
     return NextResponse.json(updatedStudent, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Erro ao atualizar aluno ${id}:`, error);
 
     if (error.code === "P2025") {
@@ -102,7 +128,7 @@ export async function DELETE(
       { message: "Aluno removido com sucesso" },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Erro ao deletar aluno ${id}:`, error);
 
     if (error.code === "P2025") {
@@ -122,14 +148,33 @@ export async function DELETE(
 // POST - Cria um novo aluno
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const formData = await request.formData();
 
-    const { nome, email, data_nascimento, turmaId, foto } = body;
+    const nome = formData.get("nome") as string;
+    const email = formData.get("email") as string;
+    const data_nascimento = formData.get("data_nascimento") as string;
+    const turmaId = formData.get("turmaId") as string;
+    const file = formData.get("file") as File;
+
     if (!nome || !email || !data_nascimento || !turmaId) {
       return NextResponse.json(
         { error: "Nome, email, data de nascimento e turma são obrigatórios" },
         { status: 400 }
       );
+    }
+
+    let fotoPath: string | undefined;
+
+    if (file) {
+      const buffer = await file.arrayBuffer();
+      const fileName = `${Date.now()}-${file.name.replace(
+        /[^a-zA-Z0-9.]/g,
+        "_"
+      )}`;
+      const filePath = path.join(UPLOAD_DIR, fileName);
+
+      await fs.promises.writeFile(filePath, Buffer.from(buffer));
+      fotoPath = `/uploads/${fileName}`;
     }
 
     const newStudent = await prisma.student.create({
@@ -138,7 +183,7 @@ export async function POST(request: Request) {
         email,
         data_nascimento: new Date(data_nascimento),
         turmaId,
-        foto: foto ? Buffer.from(foto, "base64") : undefined, // Salva como Blob
+        fotoPath,
       },
     });
 

@@ -39,12 +39,15 @@ model Student {
   id              String        @id @default(cuid())
   nome            String
   email           String        @unique
+  emailP          String?
+  tel             String?
+  telP            String?
   turmaId         String
   turma           Turma         @relation(fields: [turmaId], references: [id])
   data_nascimento DateTime
   occurrences     Occurrence[]
   tipoCounter     TipoCounter[]
-  foto            Bytes?        // Campo opcional para armazenar a imagem como BLOB
+  fotoPath        String?       // Caminho para o arquivo da foto no servidor
 }
 
 model Occurrence {

@@ -10,6 +10,7 @@ export async function middleware(req: Request) {
   if (
     pathname.startsWith("/auth/login") || // Página de login
     pathname.startsWith("/api/auth") || // Rotas da API do NextAuth
+    pathname.startsWith("/api/import") || // Permitir acesso à API de importação
     pathname.startsWith("/_next/static") || // Recursos estáticos do Next.js
     pathname.startsWith("/favicon.ico") || // Ícone de favicon
     pathname.startsWith("/public") // Outros recursos públicos
@@ -27,5 +28,7 @@ export async function middleware(req: Request) {
 
 // Configuração do matcher
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|favicon.ico|public).*)"], // Aplicar middleware a todas as rotas exceto as permitidas
+  matcher: [
+    "/((?!api/auth|api/import|_next/static|favicon.ico|public).*)", // Excluir rotas específicas do middleware
+  ],
 };

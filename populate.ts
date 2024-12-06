@@ -85,20 +85,128 @@ async function main() {
   // Criação de alunos
   await prisma.student.createMany({
     data: [
-      { id: "1", nome: "João Silva", email: "joao.silva@escola.com", turmaId: turma1.id, data_nascimento: new Date("2005-01-01") },
-      { id: "2", nome: "Maria Oliveira", email: "maria.oliveira@escola.com", turmaId: turma1.id, data_nascimento: new Date("2005-03-15") },
-      { id: "3", nome: "Carlos Souza", email: "carlos.souza@escola.com", turmaId: turma2.id, data_nascimento: new Date("2005-05-21") },
-      { id: "4", nome: "Ana Costa", email: "ana.costa@escola.com", turmaId: turma2.id, data_nascimento: new Date("2005-08-12") },
-      { id: "5", nome: "Paulo Lima", email: "paulo.lima@escola.com", turmaId: turma3.id, data_nascimento: new Date("2005-10-25") },
-      { id: "6", nome: "Lucia Menezes", email: "lucia.menezes@escola.com", turmaId: turma3.id, data_nascimento: new Date("2005-12-30") },
-      { id: "7", nome: "Fernanda Rocha", email: "fernanda.rocha@escola.com", turmaId: turma4.id, data_nascimento: new Date("2005-04-10") },
-      { id: "8", nome: "Guilherme Santos", email: "guilherme.santos@escola.com", turmaId: turma4.id, data_nascimento: new Date("2005-06-18") },
-      { id: "9", nome: "Beatriz Nogueira", email: "beatriz.nogueira@escola.com", turmaId: turma5.id, data_nascimento: new Date("2005-08-02") },
-      { id: "10", nome: "Rafael Moreira", email: "rafael.moreira@escola.com", turmaId: turma5.id, data_nascimento: new Date("2005-10-22") },
-      { id: "11", nome: "Marcelo Pires", email: "marcelo.pires@escola.com", turmaId: turma6.id, data_nascimento: new Date("2005-12-01") },
-      { id: "12", nome: "Patrícia Almeida", email: "patricia.almeida@escola.com", turmaId: turma6.id, data_nascimento: new Date("2005-09-12") },
+      { 
+        id: "1", 
+        nome: "João Silva", 
+        email: "joao.silva@escola.com", 
+        emailP: "pais.joao@escola.com", 
+        tel: "123456789", 
+        telP: "987654321", 
+        turmaId: turma1.id, 
+        data_nascimento: new Date("2005-01-01") 
+      },
+      { 
+        id: "2", 
+        nome: "Maria Oliveira", 
+        email: "maria.oliveira@escola.com", 
+        emailP: "pais.maria@escola.com", 
+        tel: "2233445566", 
+        telP: "6655443322", 
+        turmaId: turma1.id, 
+        data_nascimento: new Date("2005-03-15") 
+      },
+      { 
+        id: "3", 
+        nome: "Carlos Souza", 
+        email: "carlos.souza@escola.com", 
+        emailP: "pais.carlos@escola.com", 
+        tel: "3344556677", 
+        telP: "7766554433", 
+        turmaId: turma2.id, 
+        data_nascimento: new Date("2005-05-21") 
+      },
+      { 
+        id: "4", 
+        nome: "Ana Costa", 
+        email: "ana.costa@escola.com", 
+        emailP: "pais.ana@escola.com", 
+        tel: "4455667788", 
+        telP: "8877665544", 
+        turmaId: turma2.id, 
+        data_nascimento: new Date("2005-08-12") 
+      },
+      { 
+        id: "5", 
+        nome: "Paulo Lima", 
+        email: "paulo.lima@escola.com", 
+        emailP: "pais.paulo@escola.com", 
+        tel: "5566778899", 
+        telP: "9988776655", 
+        turmaId: turma3.id, 
+        data_nascimento: new Date("2005-10-25") 
+      },
+      { 
+        id: "6", 
+        nome: "Lucia Menezes", 
+        email: "lucia.menezes@escola.com", 
+        emailP: "pais.lucia@escola.com", 
+        tel: "6677889900", 
+        telP: "0099887766", 
+        turmaId: turma3.id, 
+        data_nascimento: new Date("2005-12-30") 
+      },
+      { 
+        id: "7", 
+        nome: "Fernanda Rocha", 
+        email: "fernanda.rocha@escola.com", 
+        emailP: "pais.fernanda@escola.com", 
+        tel: "7788990011", 
+        telP: "1100998877", 
+        turmaId: turma4.id, 
+        data_nascimento: new Date("2005-04-10") 
+      },
+      { 
+        id: "8", 
+        nome: "Guilherme Santos", 
+        email: "guilherme.santos@escola.com", 
+        emailP: "pais.guilherme@escola.com", 
+        tel: "8899001122", 
+        telP: "2211009988", 
+        turmaId: turma4.id, 
+        data_nascimento: new Date("2005-06-18") 
+      },
+      { 
+        id: "9", 
+        nome: "Beatriz Nogueira", 
+        email: "beatriz.nogueira@escola.com", 
+        emailP: "pais.beatriz@escola.com", 
+        tel: "9900112233", 
+        telP: "3322110099", 
+        turmaId: turma5.id, 
+        data_nascimento: new Date("2005-08-02") 
+      },
+      { 
+        id: "10", 
+        nome: "Rafael Moreira", 
+        email: "rafael.moreira@escola.com", 
+        emailP: "pais.rafael@escola.com", 
+        tel: "0011223344", 
+        telP: "4433221100", 
+        turmaId: turma5.id, 
+        data_nascimento: new Date("2005-10-22") 
+      },
+      { 
+        id: "11", 
+        nome: "Marcelo Pires", 
+        email: "marcelo.pires@escola.com", 
+        emailP: "pais.marcelo@escola.com", 
+        tel: "1122334455", 
+        telP: "5544332211", 
+        turmaId: turma6.id, 
+        data_nascimento: new Date("2005-12-01") 
+      },
+      { 
+        id: "12", 
+        nome: "Patrícia Almeida", 
+        email: "patricia.almeida@escola.com", 
+        emailP: "pais.patricia@escola.com", 
+        tel: "2233445566", 
+        telP: "6655443322", 
+        turmaId: turma6.id, 
+        data_nascimento: new Date("2005-09-12") 
+      },
     ],
-  });
+  });  
 
   console.log("Alunos criados manualmente.");
 
