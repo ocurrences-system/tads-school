@@ -1,6 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
+import path from "path";
+import archiver from "archiver";
+import { Readable } from "stream";
 
 const prisma = new PrismaClient();
 
@@ -17,17 +20,38 @@ export async function GET() {
       tipoCounters: await prisma.tipoCounter.findMany(),
     };
 
-    const backupFilePath = `./backup-${Date.now()}.json`;
+    // Caminho do arquivo JSON de backup
+    const backupFileName = `backup-${Date.now()}.json`;
 
-    // Salva os dados em um arquivo JSON
-    await fs.writeFile(backupFilePath, JSON.stringify(backupData, null, 2), {
-      encoding: "utf8",
+    // Caminho da pasta uploads
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+
+    // Cria o arquivo .zip
+    const zipFileName = `backup-${Date.now()}.zip`;
+    const zipStream = archiver("zip", { zlib: { level: 9 } });
+    
+    // Configura o cabeçalho para indicar que estamos retornando um arquivo zip
+    const response = new NextResponse(zipStream, {
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": `attachment; filename=${zipFileName}`,
+      },
     });
 
-    return NextResponse.json({
-      message: "Backup gerado com sucesso!",
-      filePath: backupFilePath,
-    });
+    // Adiciona o arquivo JSON de backup ao arquivo zip
+    zipStream.append(JSON.stringify(backupData, null, 2), { name: backupFileName });
+
+    // Adiciona os arquivos da pasta uploads
+    const uploadFiles = await fs.readdir(uploadsDir);
+    for (const file of uploadFiles) {
+      const filePath = path.join(uploadsDir, file);
+      zipStream.file(filePath, { name: `uploads/${file}` });
+    }
+
+    // Finaliza o arquivo zip
+    zipStream.finalize();
+
+    return response;
   } catch (error) {
     console.error("Erro ao gerar backup:", error.message);
     return NextResponse.json(
