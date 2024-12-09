@@ -60,6 +60,9 @@ export async function PUT(
 
     const nome = formData.get("nome") as string;
     const email = formData.get("email") as string;
+    const emailP = formData.get("emailP") as string; // Email dos pais
+    const tel = formData.get("tel") as string; // Telefone do aluno
+    const telP = formData.get("telP") as string; // Telefone dos pais
     const data_nascimento = formData.get("data_nascimento") as string;
     const file = formData.get("file") as File;
 
@@ -89,6 +92,9 @@ export async function PUT(
       data: {
         nome,
         email,
+        emailP, // Atualiza o emailP
+        tel, // Atualiza telefone
+        telP, // Atualiza telefone dos pais
         data_nascimento: new Date(data_nascimento),
         fotoPath,
       },
@@ -152,6 +158,9 @@ export async function POST(request: Request) {
 
     const nome = formData.get("nome") as string;
     const email = formData.get("email") as string;
+    const emailP = formData.get("emailP") as string;
+    const tel = formData.get("tel") as string;
+    const telP = formData.get("telP") as string;
     const data_nascimento = formData.get("data_nascimento") as string;
     const turmaId = formData.get("turmaId") as string;
     const file = formData.get("file") as File;
@@ -181,6 +190,9 @@ export async function POST(request: Request) {
       data: {
         nome,
         email,
+        emailP,
+        tel,
+        telP,
         data_nascimento: new Date(data_nascimento),
         turmaId,
         fotoPath,

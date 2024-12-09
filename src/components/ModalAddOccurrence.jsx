@@ -16,6 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import ModalAddTurma from "./ModalAddTurma";
+import ModalAddAluno from "./ModalAddAluno";
+import ModalAddTipoOcorrencia from "./ModalAddTipoOcorrencia";
 
 export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded }) {
   const currentYear = new Date().getFullYear();
@@ -32,6 +35,8 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
   const [filteredTurmas, setFilteredTurmas] = useState([]);
   const [alunos, setAlunos] = useState([]);
   const [tiposOcorrencia, setTiposOcorrencia] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState("");
 
   // Fetch de turmas
   useEffect(() => {
@@ -136,6 +141,11 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
     }
   };
 
+  const openModal = (type) => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
@@ -167,53 +177,61 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
             {/* Selecionar Turma */}
             <div>
               <Label>Turma</Label>
-              <Select onValueChange={(value) => handleFormChange("turmaId", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma turma" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredTurmas.map((turma) => (
-                    <SelectItem key={turma.id} value={turma.id}>
-                      {turma.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center space-x-2">
+                <Select onValueChange={(value) => handleFormChange("turmaId", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma turma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTurmas.map((turma) => (
+                      <SelectItem key={turma.id} value={turma.id}>
+                        {turma.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={() => openModal("turma")}>+</Button>
+              </div>
             </div>
 
             {/* Selecionar Aluno */}
             <div>
               <Label>Aluno</Label>
-              <Select onValueChange={(value) => handleFormChange("alunoId", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um aluno" />
-                </SelectTrigger>
-                <SelectContent>
-                  {alunos.map((aluno) => (
-                    <SelectItem key={aluno.id} value={aluno.id}>
-                      {aluno.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center space-x-2">
+                <Select onValueChange={(value) => handleFormChange("alunoId", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um aluno" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alunos.map((aluno) => (
+                      <SelectItem key={aluno.id} value={aluno.id}>
+                        {aluno.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={() => openModal("aluno")}>+</Button>
+              </div>
             </div>
 
             {/* Selecionar Tipo de Ocorrência */}
             <div>
               <Label>Tipo de Ocorrência</Label>
-              <Select onValueChange={(value) => handleFormChange("tipoId", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um tipo de ocorrência" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.isArray(tiposOcorrencia) &&
-                    tiposOcorrencia.map((tipo) => (
+              <div className="flex items-center space-x-2">
+                <Select onValueChange={(value) => handleFormChange("tipoId", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um tipo de ocorrência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposOcorrencia.map((tipo) => (
                       <SelectItem key={tipo.id} value={tipo.id}>
                         {tipo.nome} (Gravidade: {tipo.gravidade})
                       </SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={() => openModal("tipo")}>+</Button>
+              </div>
             </div>
 
             {/* Data */}
@@ -243,6 +261,11 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
           </div>
         </form>
       </DialogContent>
+
+      {/* Modais */}
+      <ModalAddTurma isOpen={isModalOpen && modalType === "turma"} onClose={() => setIsModalOpen(false)} />
+      <ModalAddAluno isOpen={isModalOpen && modalType === "aluno"} onClose={() => setIsModalOpen(false)} turmas={turmas} />
+      <ModalAddTipoOcorrencia isOpen={isModalOpen && modalType === "tipo"} onClose={() => setIsModalOpen(false)} />
     </Dialog>
   );
 }

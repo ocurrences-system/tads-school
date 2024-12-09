@@ -24,7 +24,8 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 export default function Dashboard() {
   const [ocorrencias, setOcorrencias] = useState([]);
   const [turmas, setTurmas] = useState([]);
-  const [selectedTurma, setSelectedTurma] = useState("");
+  const [selectedYear, setSelectedYear] = useState("2024");
+  const [selectedGroup, setSelectedGroup] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isTurmaModalOpen, setIsTurmaModalOpen] = useState(false);
   const [selectedTurmaOccurrences, setSelectedTurmaOccurrences] = useState([]);
@@ -32,14 +33,12 @@ export default function Dashboard() {
 
   const { data: session, status } = useSession();
 
-  // Redireciona para login se não estiver autenticado
   useEffect(() => {
     if (status === "unauthenticated") {
-      window.location.href = "/login";
+      window.location.href = "/auth/login";
     }
   }, [status]);
 
-  // Fetch de ocorrências e turmas no backend
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -70,18 +69,25 @@ export default function Dashboard() {
   }, []);
 
   const filteredOccurrences = useMemo(() => {
-    if (selectedTurma) {
-      return ocorrencias.filter((o) => o.aluno?.turma?.id === selectedTurma);
+    let filtered = ocorrencias;
+    if (selectedYear) {
+      filtered = filtered.filter((o) => o.aluno?.turma?.ano === parseInt(selectedYear, 10));
+    }    
+    if (selectedGroup) {
+      filtered = filtered.filter((o) => o.aluno?.turma?.nome?.startsWith(selectedGroup));
     }
-    return ocorrencias;
-  }, [ocorrencias, selectedTurma]);
+    return filtered;
+  }, [ocorrencias, selectedYear, selectedGroup]);
 
   const getTurmaOccurrences = () => {
     const turmaCounts = {};
 
     ocorrencias
       .filter((ocorrencia) =>
-        selectedTurma ? ocorrencia.aluno?.turma?.id === selectedTurma.id : true
+        selectedYear ? ocorrencia.aluno?.turma?.ano === parseInt(selectedYear, 10) : true
+      )
+      .filter((ocorrencia) =>
+        selectedGroup ? ocorrencia.aluno?.turma?.nome?.startsWith(selectedGroup) : true
       )
       .forEach((ocorrencia) => {
         const turmaName = ocorrencia.aluno?.turma
@@ -94,7 +100,7 @@ export default function Dashboard() {
       labels: Object.keys(turmaCounts),
       datasets: [
         {
-          label: `Ocorrências ${selectedTurma ? `- ${selectedTurma.nome} (${selectedTurma.ano})` : "por Turma"}`,
+          label: `Ocorrências por Turma`,
           data: Object.values(turmaCounts),
           backgroundColor: "rgba(75, 192, 192, 0.2)",
           borderColor: "rgba(75, 192, 192, 1)",
@@ -139,53 +145,44 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <h3 className="font-semibold text-lg">
-                {selectedTurma
-                  ? `Ocorrências em Aberto - ${selectedTurma.nome} (${selectedTurma.ano})`
-                  : "Ocorrências em Aberto - Todas as Turmas"}
+              Ocorrências em Aberto {selectedGroup || "Todos os Grupos"} - {selectedYear || "Todos os Anos"}
               </h3>
             </CardHeader>
             <CardContent>
-              <ul className="list-disc pl-5">
-                {ocorrencias.length > 0 &&
-                  ocorrencias.some((o) =>
-                    selectedTurma
-                      ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
-                      : !o.resolvida
-                  ) ? (
-                  <>
-                    {ocorrencias
-                      .filter((o) =>
-                        selectedTurma
-                          ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
-                          : !o.resolvida // Filtra apenas as não resolvidas
-                      )
-                      .slice(0, 10) // Exibe no máximo 10 ocorrências
-                      .map((o) => (
-                        <li key={o.id}>
-                          <Link href={`/profiles/student?id=${o.aluno?.id}`}>
-                            <span className="text-blue-600 hover:underline">
-                              {o.aluno?.nome || "Aluno não encontrado"}
-                            </span>
-                          </Link>{" "}
-                          - {o.tipo?.nome || "Tipo desconhecido"}
-                        </li>
-                      ))}
-                    {ocorrencias.filter((o) =>
-                      selectedTurma
-                        ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
-                        : !o.resolvida
-                    ).length > 10 && (
-                        <p className="text-gray-500 mt-2">
-                          (+{" "}
-                          {ocorrencias.filter((o) =>
-                            selectedTurma
-                              ? o.aluno?.turma?.id === selectedTurma.id && !o.resolvida
-                              : !o.resolvida
-                          ).length - 10}
-                          ...)
-                        </p>
-                      )}
-                  </>
+              <div className="flex justify-between">
+                <select
+                  className="border rounded p-2"
+                  value={selectedYear || ""}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                >
+                  <option value="">Todos os Anos</option>
+                  {[...new Set(turmas.map((t) => t.ano))].map((ano) => (
+                    <option key={ano} value={ano}>{ano}</option>
+                  ))}
+                </select>
+                <select
+                  className="border rounded p-2"
+                  value={selectedGroup || ""}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                >
+                  <option value="">Todos os Grupos</option>
+                  {[...new Set(turmas.map((t) => t.nome.split(" ")[0]))].map((group) => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+              </div>
+              <ul className="list-disc pl-5 mt-4">
+                {filteredOccurrences.length > 0 ? (
+                  filteredOccurrences.map((o) => (
+                    <li key={o.id}>
+                      <Link href={`/profiles/student?id=${o.aluno?.id}`}>
+                        <span className="text-blue-600 hover:underline">
+                          {o.aluno?.nome || "Aluno não encontrado"}
+                        </span>
+                      </Link>{" "}
+                      - {o.tipo?.nome || "Tipo desconhecido"}
+                    </li>
+                  ))
                 ) : (
                   <p className="text-gray-500">Nenhuma ocorrência encontrada.</p>
                 )}
@@ -198,22 +195,6 @@ export default function Dashboard() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <h3 className="font-semibold text-lg">Estatísticas</h3>
-                  <select
-                    className="border rounded p-2"
-                    value={selectedTurma?.id || ""}
-                    onChange={(e) => {
-                      const turmaId = e.target.value;
-                      const turma = turmas.find((t) => t.id === turmaId);
-                      setSelectedTurma(turma ? { id: turma.id, nome: turma.nome, ano: turma.ano } : null);
-                    }}
-                  >
-                    <option value="">Todas as Turmas</option>
-                    {turmas.map((turma) => (
-                      <option key={turma.id} value={turma.id}>
-                        {turma.nome} ({turma.ano})
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </CardHeader>
               <CardContent>

@@ -10,7 +10,6 @@ export default function DbPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Função para fazer o backup
   const handleBackup = async () => {
     setIsDownloading(true);
     try {
@@ -62,13 +61,11 @@ export default function DbPage() {
     handleImport(file, type);
   };
 
-  // Função para importar imagens da pasta selecionada
   const handleImportImages = async (directoryHandle) => {
     setIsUploading(true);
     try {
       const formData = new FormData();
 
-      // Obtenha os arquivos da pasta
       for await (const fileHandle of directoryHandle.values()) {
         const file = await fileHandle.getFile();
         formData.append("files", file, file.name);
@@ -90,10 +87,8 @@ export default function DbPage() {
     }
   };
 
-  // Função para selecionar a pasta de imagens
   const handleFolderSelect = async () => {
     try {
-      // Verifique se a API de seleção de diretórios é suportada
       if ("showDirectoryPicker" in window) {
         const directoryHandle = await window.showDirectoryPicker();
         handleImportImages(directoryHandle);

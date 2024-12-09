@@ -19,9 +19,7 @@ export async function POST(req: Request) {
 
     const data = JSON.parse(await fs.readFile(tempFilePath, "utf8"));
 
-    // Iniciar uma transação para garantir a integridade dos dados
     await prisma.$transaction(async (tx) => {
-      // Restaurar dados para cada tabela em ordem
       if (data.funcoes) {
         for (const funcao of data.funcoes) {
           await tx.funcao.upsert({
@@ -44,7 +42,6 @@ export async function POST(req: Request) {
 
       if (data.users) {
         for (const user of data.users) {
-          // Verifique se o 'funcaoId' existe antes de criar o usuário
           const funcaoExistente = await tx.funcao.findUnique({
             where: { id: user.funcaoId },
           });
@@ -73,7 +70,6 @@ export async function POST(req: Request) {
 
       if (data.students) {
         for (const student of data.students) {
-          // Verifique se a turma existe antes de criar o aluno
           const turmaExistente = await tx.turma.findUnique({
             where: { id: student.turmaId },
           });
@@ -92,7 +88,6 @@ export async function POST(req: Request) {
 
       if (data.occurrences) {
         for (const occurrence of data.occurrences) {
-          // Verifique se o aluno e o usuário existem antes de criar a ocorrência
           const alunoExistente = await tx.student.findUnique({
             where: { id: occurrence.alunoId },
           });
@@ -109,7 +104,6 @@ export async function POST(req: Request) {
             throw new Error(`Usuário com ID ${occurrence.usuarioId} não existe.`);
           }
 
-          // Verifique se o tipo existe antes de criar a ocorrência
           const tipoExistente = await tx.tipo.findUnique({
             where: { id: occurrence.tipoId },
           });
@@ -128,7 +122,6 @@ export async function POST(req: Request) {
 
       if (data.tipoCounters) {
         for (const counter of data.tipoCounters) {
-          // Verifique se o aluno e o tipo existem antes de criar o contador
           const alunoExistente = await tx.student.findUnique({
             where: { id: counter.alunoId },
           });

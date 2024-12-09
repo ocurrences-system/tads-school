@@ -3,14 +3,13 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET - Lista todas as ocorrências de um aluno específico
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const { id } = params;
 
   try {
     const occurrences = await prisma.occurrence.findMany({
       where: { alunoId: id },
-      include: { tipo: true }, // Inclui os dados do tipo de ocorrência
+      include: { tipo: true },
     });
 
     return NextResponse.json(occurrences, { status: 200 });

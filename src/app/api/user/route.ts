@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
-    // Obter sessão
     const session = await getServerSession();
 
     console.log(session);
@@ -15,7 +14,6 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 });
     }
 
-    // Buscar usuário pelo login
     const user = await prisma.user.findUnique({
       where: { login: session.user.login },
       select: {

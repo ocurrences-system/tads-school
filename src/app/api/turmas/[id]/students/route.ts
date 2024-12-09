@@ -3,7 +3,6 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET - Lista alunos de uma turma específica
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const { id } = params;
 

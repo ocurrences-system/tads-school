@@ -59,7 +59,7 @@ model Occurrence {
   tipo      Tipo     @relation(fields: [tipoId], references: [id])
   descricao String
   decisao   String
-  resolvida Boolean  @default(false) // Flag para indicar se foi tratada
+  resolvida Boolean  @default(false)
   usuario   User     @relation(fields: [usuarioId], references: [id])
   aluno     Student  @relation(fields: [alunoId], references: [id])
 }

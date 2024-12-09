@@ -20,7 +20,6 @@ const authOptions = {
           throw new Error("Login e senha são obrigatórios.");
         }
 
-        // Busca o usuário pelo login
         const user = await prisma.user.findUnique({
           where: { login },
           select: {
@@ -31,6 +30,7 @@ const authOptions = {
             funcao: {
               select: {
                 nome: true,
+                poder: true,
               },
             },
             foto: true,
@@ -41,13 +41,11 @@ const authOptions = {
           throw new Error("Credenciais inválidas.");
         }
 
-        // Verifica a senha usando bcrypt
         const isPasswordCorrect = await bcrypt.compare(password, user.senha);
         if (!isPasswordCorrect) {
           throw new Error("Senha inválida.");
         }
 
-        // Retorna as informações necessárias do usuário
         return {
           id: user.id,
           name: user.nome,

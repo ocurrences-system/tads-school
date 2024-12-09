@@ -1,19 +1,23 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
-import bcrypt from "bcrypt";
+import { signIn, useSession } from "next-auth/react";
 
 export default function LoginPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const hashFromDB = "$2b$10$tITEQLMqwHxnTRMzA272iut95GCQqG0RxAuXuYjSEwhvLb5TnlRFS";
-  const senha = "admin";
 
-  // Exibe mensagem de erro se houver parâmetro de erro na URL
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
+
   useEffect(() => {
     const errorParam = searchParams.get("error");
     if (errorParam) {
@@ -31,18 +35,28 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", {
-        login, // Usa o campo login em vez de email
+        login,
         password,
-        redirect: true, // Habilita redirecionamento automático
-        callbackUrl: "/dashboard", // Página para redirecionar após o login
+        redirect: false,
       });
-      if (result?.error) {
+
+      if (result?.ok) {
+        router.push("/dashboard");
+      } else {
         setError("Credenciais inválidas. Tente novamente.");
       }
     } catch (err) {
       setError("Erro ao tentar logar. Tente novamente mais tarde.");
     }
   };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <p>Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 
-// Define a pasta onde as imagens serão armazenadas
 const uploadDir = path.join(process.cwd(), "public", "uploads");
 
 export async function POST(req: Request) {
@@ -15,7 +14,6 @@ export async function POST(req: Request) {
     }
 
     for (const file of files) {
-      // Salve cada imagem na pasta de uploads
       const fileBuffer = Buffer.from(await file.arrayBuffer());
       const filePath = path.join(uploadDir, file.name);
 

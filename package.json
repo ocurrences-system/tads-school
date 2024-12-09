@@ -32,7 +32,8 @@
     "sonner": "^1.7.0",
     "tads-school": "file:",
     "tailwind-merge": "^2.5.3",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.3",

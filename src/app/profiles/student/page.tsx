@@ -25,13 +25,13 @@ export default function PerfilAluno() {
   const [filteredOccurrences, setFilteredOccurrences] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isSearching, setIsSearching] = useState(!alunoIdFromURL);
-  const [pastClasses, setPastClasses] = useState([]); // Histórico de turmas passadas
-  const [selectedOccurrence, setSelectedOccurrence] = useState(null); // Ocorrência selecionada
-  const [selectedOccurrenceDesc, setSelectedOccurrenceDesc] = useState(null); // Ocorrência selecionada
+  const [pastClasses, setPastClasses] = useState([]);
+  const [selectedOccurrence, setSelectedOccurrence] = useState(null);
+  const [selectedOccurrenceDesc, setSelectedOccurrenceDesc] = useState(null);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false); // Controle do modal de imagem
-  const [isOccurrenceModalOpen, setIsOccurrenceModalOpen] = useState(false); // Controle do modal de ocorrência
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isOccurrenceModalOpen, setIsOccurrenceModalOpen] = useState(false);
 
   const [filterSeverity, setFilterSeverity] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -41,13 +41,13 @@ export default function PerfilAluno() {
   const [isLoading, setIsLoading] = useState(false);
 
   const toggleSortOrder = () => {
-    const newSortOrder = sortOrder === "asc" ? "desc" : "asc"; // Inverte a ordem
+    const newSortOrder = sortOrder === "asc" ? "desc" : "asc";
     setSortOrder(newSortOrder);
 
     const sortedOccurrences = [...filteredOccurrences].sort((a, b) => {
       const dateA = new Date(a.data);
       const dateB = new Date(b.data);
-      return newSortOrder === "asc" ? dateA - dateB : dateB - dateA; // Ordena baseado na data
+      return newSortOrder === "asc" ? dateA - dateB : dateB - dateA;
     });
 
     setFilteredOccurrences(sortedOccurrences);
@@ -57,20 +57,17 @@ export default function PerfilAluno() {
     try {
       setIsLoading(true);
 
-      // Busca os dados do estudante
       const response = await fetch(`/api/students/${selectedStudentId}`);
       if (!response.ok) throw new Error("Erro ao buscar estudante");
 
       const data = await response.json();
 
-      // Converte o caminho da foto em uma URL completa, se estiver disponível
       if (data.fotoPath) {
         data.foto = `${data.fotoPath}`;
       }
 
       setStudentData(data);
 
-      // Busca as ocorrências do estudante
       const occurrencesResponse = await fetch(
         `/api/students/${selectedStudentId}/occurrences`
       );
@@ -81,7 +78,6 @@ export default function PerfilAluno() {
       setOccurrences(occurrencesData);
       setFilteredOccurrences(occurrencesData);
 
-      // Busca o histórico de turmas passadas do estudante
       const pastClassesResponse = await fetch(
         `/api/students/${selectedStudentId}/past-classes`
       );
@@ -118,7 +114,7 @@ export default function PerfilAluno() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedData), // Envia todos os campos
+        body: JSON.stringify(updatedData),
       });
 
       if (!response.ok) {
@@ -127,7 +123,6 @@ export default function PerfilAluno() {
 
       const updatedOccurrence = await response.json();
 
-      // Atualiza o estado local com a nova ocorrência
       setOccurrences((prevOccurrences) =>
         prevOccurrences.map((occ) =>
           occ.id === updatedOccurrence.id ? updatedOccurrence : occ
@@ -348,11 +343,11 @@ export default function PerfilAluno() {
                       {/* Exibição da foto */}
                       {studentData.foto ? (
                         <img
-                          src={studentData.foto} // A URL da imagem será atribuída pelo fetchStudentData
+                          src={studentData.foto}
                           alt="Foto do Aluno"
                           className="w-32 h-40 object-cover border rounded-md mb-4 cursor-pointer"
                           loading="lazy"
-                          onClick={() => setIsImageModalOpen(true)} // Abre o modal ao clicar
+                          onClick={() => setIsImageModalOpen(true)}
                         />
                       ) : (
                         <p className="text-gray-500 text-sm italic mb-6">
@@ -535,7 +530,7 @@ export default function PerfilAluno() {
                                 {/* Ícone para ver por completo */}
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation(); // Impede o clique no botão de abrir o modal da linha
+                                    e.stopPropagation();
                                     setSelectedOccurrenceDesc(occurrence);
                                   }}
                                   className="text-green-500 hover:text-green-700"
@@ -614,11 +609,11 @@ export default function PerfilAluno() {
             {isOccurrenceModalOpen && (
               <div
                 className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-                onClick={() => setIsOccurrenceModalOpen(false)} // Fecha o modal ao clicar fora
+                onClick={() => setIsOccurrenceModalOpen(false)}
               >
                 <div
                   className="bg-white p-6 rounded-md shadow-lg max-w-md w-full"
-                  onClick={(e) => e.stopPropagation()} // Impede o fechamento ao clicar no conteúdo
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <h2 className="text-xl font-semibold mb-4">Tratar Ocorrência</h2>
                   <p><strong>Data:</strong> {new Date(selectedOccurrence.data).toLocaleDateString("pt-br")}</p>
@@ -634,7 +629,7 @@ export default function PerfilAluno() {
                     onChange={(e) =>
                       setSelectedOccurrence((prev) => ({
                         ...prev,
-                        descricao: e.target.value, // Atualiza a descrição no estado local
+                        descricao: e.target.value,
                       }))
                     }
                   />
@@ -649,7 +644,7 @@ export default function PerfilAluno() {
                     onChange={(e) =>
                       setSelectedOccurrence((prev) => ({
                         ...prev,
-                        decisao: e.target.value, // Atualiza a decisão no estado local
+                        decisao: e.target.value,
                       }))
                     }
                   />
@@ -660,11 +655,11 @@ export default function PerfilAluno() {
                   <input
                     type="checkbox"
                     className="mt-2"
-                    checked={selectedOccurrence.resolvida || false} // Mostra o estado atual de resolvida
+                    checked={selectedOccurrence.resolvida || false}
                     onChange={(e) =>
                       setSelectedOccurrence((prev) => ({
                         ...prev,
-                        resolvida: e.target.checked, // Atualiza o estado de resolvida
+                        resolvida: e.target.checked,
                       }))
                     }
                   />
@@ -673,7 +668,7 @@ export default function PerfilAluno() {
                     <Button
                       onClick={() => {
                         const { id, descricao, decisao, resolvida } = selectedOccurrence;
-                        handleSaveOccurrence(id, { descricao, decisao, resolvida }); // Envia todos os dados para salvar
+                        handleSaveOccurrence(id, { descricao, decisao, resolvida });
                         setIsOccurrenceModalOpen(false);
                       }}
                       className="bg-green-500"

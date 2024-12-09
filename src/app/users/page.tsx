@@ -8,7 +8,7 @@ import { toast } from "sonner";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function PerfilAluno() {
-  const [studentData, setStudentData] = useState<any>(null); // Novo estado para os dados do aluno
+  const [studentData, setStudentData] = useState<any>(null);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [chartInstance, setChartInstance] = useState<Chart | null>(null);
 
@@ -26,7 +26,7 @@ export default function PerfilAluno() {
 
   const fetchStudentData = async () => {
     try {
-      const response = await fetch(`${API_URL}/users`); // Ajuste a URL conforme necessário
+      const response = await fetch(`${API_URL}/users`);
       if (!response.ok) throw new Error("Erro ao buscar dados do aluno");
       const data = await response.json();
       setStudentData(data);
@@ -40,7 +40,6 @@ export default function PerfilAluno() {
     fetchOccurrences();
     fetchStudentData();
 
-    // (Código do gráfico se necessário)
   }, []);
 
   return (

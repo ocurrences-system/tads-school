@@ -30,11 +30,9 @@ export async function POST(request: Request) {
       fs.mkdirSync(UPLOAD_DIR, { recursive: true });
     }
 
-    // Salva o arquivo no servidor
     const buffer = await file.arrayBuffer();
     await writeFile(filePath, Buffer.from(buffer));
 
-    // Atualiza o caminho do arquivo no banco de dados
     await prisma.student.update({
       where: { id: studentId },
       data: { fotoPath: `/uploads/${fileName}` },
@@ -47,7 +45,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Erro ao salvar o arquivo:", error);
 
-    // Remove o arquivo em caso de erro durante o processamento
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
