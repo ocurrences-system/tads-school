@@ -35,7 +35,10 @@ export async function POST(request: Request) {
 
     if (!alunoId || !data || !tipoId || !descricao || !usuarioId) {
       return NextResponse.json(
-        { error: "Todos os campos (alunoId, data, tipoId, descricao, usuarioId) são obrigatórios." },
+        {
+          error:
+            "Todos os campos (alunoId, data, tipoId, descricao, usuarioId) são obrigatórios.",
+        },
         { status: 400 }
       );
     }
@@ -75,6 +78,25 @@ export async function POST(request: Request) {
       },
     });
 
+    await prisma.tipoCounter.upsert({
+      where: {
+        alunoId_tipoId: {
+          alunoId,
+          tipoId,
+        },
+      },
+      create: {
+        alunoId,
+        tipoId,
+        count: 1,
+      },
+      update: {
+        count: {
+          increment: 1,
+        },
+      },
+    });
+
     return NextResponse.json(newOccurrence, { status: 201 });
   } catch (error) {
     console.error("Erro ao criar ocorrência:", error);
@@ -84,7 +106,10 @@ export async function POST(request: Request) {
       error.code === "P2003"
     ) {
       return NextResponse.json(
-        { error: "Erro de integridade referencial: aluno, usuário ou tipo inválido." },
+        {
+          error:
+            "Erro de integridade referencial: aluno, usuário ou tipo inválido.",
+        },
         { status: 400 }
       );
     }

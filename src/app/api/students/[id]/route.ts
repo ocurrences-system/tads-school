@@ -28,6 +28,12 @@ export async function GET(
             tipo: true,
           },
         },
+        // Incluindo também o tipoCounter
+        tipoCounter: {
+          include: {
+            tipo: true,
+          },
+        },
       },
     });
 

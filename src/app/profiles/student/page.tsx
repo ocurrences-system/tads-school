@@ -40,6 +40,12 @@ export default function PerfilAluno() {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDescription, setSelectedDescription] = useState("");
+
+  // Estado para armazenar tipos que atingiram ou ultrapassaram o limite (ex: 3)
+  const [alertTypes, setAlertTypes] = useState([]);
+
   const toggleSortOrder = () => {
     const newSortOrder = sortOrder === "asc" ? "desc" : "asc";
     setSortOrder(newSortOrder);
@@ -163,7 +169,6 @@ export default function PerfilAluno() {
     }
   };
 
-
   const handleStudentUpdated = (updatedStudent) => {
     setStudentData(updatedStudent);
   };
@@ -214,6 +219,7 @@ export default function PerfilAluno() {
     fetchOccurrences();
   }, [alunoIdFromURL]);
 
+  // Filtra ocorrências baseado nos filtros selecionados
   useEffect(() => {
     const filtered = occurrences.filter((o) => {
       const matchesSeverity = filterSeverity
@@ -232,6 +238,28 @@ export default function PerfilAluno() {
 
     setFilteredOccurrences(filtered);
   }, [occurrences, filterSeverity, searchText, showResolved, showUnresolved]);
+
+  // Conta quantas ocorrências por tipo e gera alertas se >= 3
+  useEffect(() => {
+    if (occurrences.length > 0) {
+      const occurrenceCountByType = occurrences.reduce((acc, curr) => {
+        if (!curr.tipoId) return acc;
+        acc[curr.tipoId] = (acc[curr.tipoId] || 0) + 1;
+        return acc;
+      }, {});
+
+      const alerts = Object.entries(occurrenceCountByType)
+        .filter(([_, count]) => count >= 3)
+        .map(([tipoId, count]) => {
+          const tipoName = occurrences.find((o) => o.tipoId === tipoId)?.tipo?.nome || "Tipo Desconhecido";
+          return { tipoId, tipoName, count };
+        });
+
+      setAlertTypes(alerts);
+    } else {
+      setAlertTypes([]);
+    }
+  }, [occurrences]);
 
   const handleStudentSelection = (studentId) => {
     setSelectedStudentId(studentId);
@@ -261,11 +289,6 @@ export default function PerfilAluno() {
       setFilteredOccurrences(occurrences);
     }
   };
-
-
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDescription, setSelectedDescription] = useState("");
 
   return (
     <div className="min-h-screen bg-gray-100 pt-16">
@@ -340,7 +363,6 @@ export default function PerfilAluno() {
                     </div>
                   ) : studentData ? (
                     <div>
-                      {/* Exibição da foto */}
                       {studentData.foto ? (
                         <img
                           src={studentData.foto}
@@ -355,11 +377,9 @@ export default function PerfilAluno() {
                         </p>
                       )}
 
-                      {/* Detalhes do aluno */}
                       <p className="mb-2">
                         <strong>Nome:</strong> {studentData.nome || "Não disponível"}
                       </p>
-                      {/* Contato */}
                       <div className="mt-2">
                         <Card className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
                           <div className="space-y-2">
@@ -395,7 +415,6 @@ export default function PerfilAluno() {
                           : "Não atribuída"}
                       </p>
 
-                      {/* Histórico de turmas passadas */}
                       {pastClasses.length > 0 && (
                         <div className="mt-4">
                           <strong>Turmas Passadas:</strong>
@@ -412,13 +431,38 @@ export default function PerfilAluno() {
                           </ul>
                         </div>
                       )}
+
+                      {/* DEBUG TipoCounter
+                      {studentData?.tipoCounter && studentData.tipoCounter.length > 0 && (
+                        <div className="mt-4 bg-gray-100 border border-gray-300 p-4 rounded">
+                          <h4 className="font-bold mb-2 text-gray-700">Debug: Todos os TipoCounter</h4>
+                          <ul className="list-disc pl-5">
+                            {studentData.tipoCounter.map((item) => (
+                              <li key={item.id} className="text-gray-800">
+                                Tipo: <strong>{item.tipo?.nome || "Desconhecido"}</strong> - Count: <strong>{item.count}</strong>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}*/}
+
+                      {alertTypes.length > 0 && (
+                        <div className="mt-4 bg-red-100 border border-red-300 p-4 rounded">
+                          <h4 className="font-bold mb-2 text-red-700">Atenção!</h4>
+                          {alertTypes.map((alert) => (
+                            <p key={alert.tipoId} className="text-red-700">
+                              O aluno atingiu {alert.count} ocorrências do tipo: <strong>{alert.tipoName}</strong>.
+                            </p>
+                          ))}
+                        </div>
+                      )}
+
                     </div>
                   ) : (
                     <p className="text-gray-600">Nenhum aluno encontrado.</p>
                   )}
                 </CardContent>
               </Card>
-
 
 
               <div className="col-span-2">
@@ -527,7 +571,6 @@ export default function PerfilAluno() {
                               <td className="py-3 px-4">{occurrence.tipo?.gravidade || "N/A"}</td>
                               <td className="py-3 px-4">{occurrence.resolvida ? "Sim" : "Não"}</td>
                               <td className="py-3 px-4 flex space-x-4">
-                                {/* Ícone para ver por completo */}
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -538,7 +581,6 @@ export default function PerfilAluno() {
                                 >
                                   <Eye size={20} />
                                 </button>
-                                {/* Ícone para editar */}
                                 <button
                                   onClick={() => {
                                     handleOccurrenceClick(occurrence);
@@ -548,7 +590,6 @@ export default function PerfilAluno() {
                                 >
                                   <Pencil size={20} />
                                 </button>
-                                {/* Ícone para excluir */}
                                 <button
                                   onClick={() => {
                                     handleDeleteOccurrence(occurrence.id);
@@ -589,7 +630,7 @@ export default function PerfilAluno() {
             <ModalStudentImage
               isOpen={isImageModalOpen}
               onClose={() => setIsImageModalOpen(false)}
-              imageSrc={studentData?.foto || null} // Passa a foto do aluno
+              imageSrc={studentData?.foto || null}
             />
 
             {isModalOpen && (

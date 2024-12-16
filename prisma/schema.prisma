@@ -79,4 +79,5 @@ model TipoCounter {
   count   Int     @default(0)
   aluno   Student @relation(fields: [alunoId], references: [id])
   tipo    Tipo    @relation(fields: [tipoId], references: [id])
+  @@unique([alunoId, tipoId])
 }

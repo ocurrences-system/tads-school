@@ -72,7 +72,7 @@ export default function Dashboard() {
     let filtered = ocorrencias;
     if (selectedYear) {
       filtered = filtered.filter((o) => o.aluno?.turma?.ano === parseInt(selectedYear, 10));
-    }    
+    }
     if (selectedGroup) {
       filtered = filtered.filter((o) => o.aluno?.turma?.nome?.startsWith(selectedGroup));
     }
@@ -145,7 +145,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <h3 className="font-semibold text-lg">
-              Ocorrências em Aberto {selectedGroup || "Todos os Grupos"} - {selectedYear || "Todos os Anos"}
+                Ocorrências em Aberto {selectedGroup || "Todos os Grupos"} - {selectedYear || "Todos os Anos"}
               </h3>
             </CardHeader>
             <CardContent>
@@ -221,12 +221,18 @@ export default function Dashboard() {
                   <Button asChild>
                     <Link href="/profiles/student">Gerenciar Alunos</Link>
                   </Button>
-                  <Button asChild>
-                    <Link href="/db">Gerenciar Dados</Link>
-                  </Button>
-                  <Button asChild>
-                    <Link href="/sugestions">Gerenciar Sugestões</Link>
-                  </Button>
+
+                  {/* Somente exibe se o poder >= 75 */}
+                  {session?.user?.poder >= 75 && (
+                    <>
+                      <Button asChild>
+                        <Link href="/db">Gerenciar Dados</Link>
+                      </Button>
+                      <Button asChild>
+                        <Link href="/sugestions">Gerenciar Sugestões</Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
