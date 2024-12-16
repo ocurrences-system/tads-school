@@ -132,7 +132,7 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
       }
 
       const newOccurrence = await response.json();
-      toast.success("Ocorrência cadastrada com sucesso!");
+      //toast.success("Ocorrência cadastrada com sucesso!");
       onOccurrenceAdded(newOccurrence);
       onClose();
     } catch (error) {
@@ -265,7 +265,7 @@ export default function ModalAddOccurrence({ isOpen, onClose, onOccurrenceAdded 
       {/* Modais */}
       <ModalAddTurma isOpen={isModalOpen && modalType === "turma"} onClose={() => setIsModalOpen(false)} />
       <ModalAddAluno isOpen={isModalOpen && modalType === "aluno"} onClose={() => setIsModalOpen(false)} turmas={turmas} />
-      <ModalAddTipoOcorrencia isOpen={isModalOpen && modalType === "tipo"} onClose={() => setIsModalOpen(false)} />
-    </Dialog>
+      <ModalAddTipoOcorrencia isOpen={isModalOpen && modalType === "tipo"} onClose={() => setIsModalOpen(false)} onTipoAdded={() => { }} />    
+      </Dialog>
   );
 }
