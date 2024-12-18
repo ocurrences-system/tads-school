@@ -14,31 +14,64 @@ export default function ModalEditStudent({
   onStudentUpdated,
   refetchStudent,
   setLoadingState,
-  turmas, // Turmas passadas como prop
+  turmas = [],
 }) {
+  const [yearSelected, setYearSelected] = useState("");
+  const [filteredTurmas, setFilteredTurmas] = useState([]);
+
   const [formData, setFormData] = useState({
     nome: student?.nome || "",
     email: student?.email || "",
-    emailP: student?.emailP || "", // Campo email dos pais
-    tel: student?.tel || "", // Campo telefone
-    telP: student?.telP || "", // Campo telefone dos pais
-    data_nascimento: student?.data_nascimento?.split("T")[0] || "", // Formato yyyy-mm-dd
-    foto: null, // Foto do aluno
-    turmaId: student?.turmaId || "", // ID da turma
+    emailP: student?.emailP || "",
+    tel: student?.tel || "",
+    telP: student?.telP || "",
+    data_nascimento: student?.data_nascimento?.split("T")[0] || "",
+    foto: null,
+    turmaId: student?.turmaId || "",
   });
 
+  // Atualiza o form quando o student muda
   useEffect(() => {
     if (student) {
-      setFormData((prevData) => ({
-        ...prevData,
+      setFormData({
         nome: student?.nome || "",
         email: student?.email || "",
-        emailP: student?.emailP || "", // Atualiza o emailP
-        tel: student?.tel || "", // Atualiza o telefone
-        telP: student?.telP || "", // Atualiza o telefone dos pais
+        emailP: student?.emailP || "",
+        tel: student?.tel || "",
+        telP: student?.telP || "",
         data_nascimento: student?.data_nascimento?.split("T")[0] || "",
-        turmaId: student?.turmaId || "", // Atualiza turmaId
-      }));
+        turmaId: student?.turmaId || "",
+        foto: null
+      });
+    }
+  }, [student]);
+
+  // Quando selecionar o ano, filtrar as turmas
+  useEffect(() => {
+    if (yearSelected) {
+      // Filtra turmas pelo ano selecionado
+      const turmasFiltradas = turmas.filter((t) => t.ano.toString() === yearSelected.toString());
+      setFilteredTurmas(turmasFiltradas);
+
+      // Caso a turma atual do aluno não pertença ao ano selecionado, limpa o turmaId
+      if (formData.turmaId) {
+        const turmaAtual = turmasFiltradas.find((t) => t.id === formData.turmaId);
+        if (!turmaAtual) {
+          setFormData((prev) => ({ ...prev, turmaId: "" }));
+        }
+      }
+    } else {
+      // Se não tiver ano selecionado, ainda não filtra
+      setFilteredTurmas([]);
+      setFormData((prev) => ({ ...prev, turmaId: "" }));
+    }
+  }, [yearSelected, turmas, formData.turmaId]);
+
+  // Se o aluno já tiver uma turma no momento da edição,
+  // seleciona automaticamente o ano daquela turma.
+  useEffect(() => {
+    if (student?.turma?.ano) {
+      setYearSelected(student.turma.ano.toString());
     }
   }, [student]);
 
@@ -72,17 +105,16 @@ export default function ModalEditStudent({
     try {
       setLoadingState(true);
 
-      // Cria um FormData para enviar o arquivo e os dados
       const formDataToSend = new FormData();
       formDataToSend.append("nome", formData.nome);
       formDataToSend.append("email", formData.email);
-      formDataToSend.append("emailP", formData.emailP); // Envia email dos pais
-      formDataToSend.append("tel", formData.tel); // Envia telefone
-      formDataToSend.append("telP", formData.telP); // Envia telefone dos pais
+      formDataToSend.append("emailP", formData.emailP);
+      formDataToSend.append("tel", formData.tel);
+      formDataToSend.append("telP", formData.telP);
       formDataToSend.append("data_nascimento", formData.data_nascimento);
-      formDataToSend.append("turmaId", formData.turmaId); // Enviando o ID da turma
+      formDataToSend.append("turmaId", formData.turmaId);
       if (formData.foto) {
-        formDataToSend.append("file", formData.foto); // Se houver foto, envia também
+        formDataToSend.append("file", formData.foto);
       }
 
       const response = await fetch(`/api/students/${student.id}`, {
@@ -97,7 +129,6 @@ export default function ModalEditStudent({
       onStudentUpdated(updatedStudent);
       onClose();
 
-      // Aguarda meio segundo e busca os dados novamente
       setTimeout(() => {
         refetchStudent();
       }, 1500);
@@ -108,6 +139,9 @@ export default function ModalEditStudent({
       setLoadingState(false);
     }
   };
+
+  // Obter a lista única de anos disponíveis a partir das turmas
+  const anos = [...new Set(turmas.map((t) => t.ano))];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -170,17 +204,42 @@ export default function ModalEditStudent({
               required
             />
           </div>
+
+          {/* Seletor de Ano */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Ano</label>
+            <Select
+              value={yearSelected}
+              onValueChange={(value) => {
+                setYearSelected(value);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {anos.map((ano) => (
+                  <SelectItem key={ano} value={ano.toString()}>
+                    {ano}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Seletor de Turma após selecionar o ano */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Turma</label>
             <Select
-              value={formData.turmaId} // Passa o turmaId correto aqui
+              value={formData.turmaId}
               onValueChange={(value) => handleInputChange("turmaId", value)}
+              disabled={!yearSelected} // Desabilita caso não tenha ano selecionado
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma turma" />
               </SelectTrigger>
               <SelectContent>
-                {turmas?.map((turma) => (
+                {filteredTurmas.map((turma) => (
                   <SelectItem key={turma.id} value={turma.id}>
                     {turma.nome}
                   </SelectItem>
@@ -188,6 +247,7 @@ export default function ModalEditStudent({
               </SelectContent>
             </Select>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Foto</label>
             <Input type="file" accept="image/*" onChange={handleFileChange} />

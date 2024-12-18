@@ -25,7 +25,6 @@ export default function PerfilAluno() {
   const [filteredOccurrences, setFilteredOccurrences] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isSearching, setIsSearching] = useState(!alunoIdFromURL);
-  const [pastClasses, setPastClasses] = useState([]);
   const [selectedOccurrence, setSelectedOccurrence] = useState(null);
   const [selectedOccurrenceDesc, setSelectedOccurrenceDesc] = useState(null);
 
@@ -83,15 +82,6 @@ export default function PerfilAluno() {
       const occurrencesData = await occurrencesResponse.json();
       setOccurrences(occurrencesData);
       setFilteredOccurrences(occurrencesData);
-
-      const pastClassesResponse = await fetch(
-        `/api/students/${selectedStudentId}/past-classes`
-      );
-      if (!pastClassesResponse.ok)
-        throw new Error("Erro ao buscar histórico de turmas");
-
-      const pastClassesData = await pastClassesResponse.json();
-      setPastClasses(pastClassesData);
     } catch (error) {
       console.error("Erro ao carregar dados do estudante:", error);
       toast.error("Erro ao carregar os dados do estudante.");
@@ -377,6 +367,12 @@ export default function PerfilAluno() {
                         </p>
                       )}
 
+                      {studentData.foto && studentData.fotoAdulterada && (
+                        <p className="text-red-500 text-sm italic mb-6">
+                          Atenção: A foto atual do aluno não corresponde ao registro original (adulterada).
+                        </p>
+                      )}
+
                       <p className="mb-2">
                         <strong>Nome:</strong> {studentData.nome || "Não disponível"}
                       </p>
@@ -414,23 +410,6 @@ export default function PerfilAluno() {
                           ? `${studentData.turma.nome} - ${studentData.turma.ano}`
                           : "Não atribuída"}
                       </p>
-
-                      {pastClasses.length > 0 && (
-                        <div className="mt-4">
-                          <strong>Turmas Passadas:</strong>
-                          <ul className="list-disc pl-5">
-                            {pastClasses.map((turma) => (
-                              <li key={turma.id}>
-                                <Link href={`/turmas/${turma.id}`}>
-                                  <span className="text-blue-600 hover:underline">
-                                    {turma.nome} - {turma.ano}
-                                  </span>
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
 
                       {/* DEBUG TipoCounter
                       {studentData?.tipoCounter && studentData.tipoCounter.length > 0 && (
@@ -615,6 +594,7 @@ export default function PerfilAluno() {
                   onStudentUpdated={handleStudentUpdated}
                   refetchStudent={fetchStudentData}
                   setLoadingState={setIsLoading}
+                  turmas={turmas}
                 />
                 {selectedOccurrenceDesc && (
                   <ModalOccurrenceDescription

@@ -30,6 +30,8 @@ export default function Dashboard() {
   const [isTurmaModalOpen, setIsTurmaModalOpen] = useState(false);
   const [selectedTurmaOccurrences, setSelectedTurmaOccurrences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showResolved, setShowResolved] = useState(false);
+  const [showUnresolved, setShowUnresolved] = useState(true);
 
   const { data: session, status } = useSession();
 
@@ -76,8 +78,16 @@ export default function Dashboard() {
     if (selectedGroup) {
       filtered = filtered.filter((o) => o.aluno?.turma?.nome?.startsWith(selectedGroup));
     }
+
+    // Filtro de resolvidas e não resolvidas
+    filtered = filtered.filter((o) => {
+      const matchesResolved = showResolved && o.resolvida;
+      const matchesUnresolved = showUnresolved && !o.resolvida;
+      return matchesResolved || matchesUnresolved;
+    });
+
     return filtered;
-  }, [ocorrencias, selectedYear, selectedGroup]);
+  }, [ocorrencias, selectedYear, selectedGroup, showResolved, showUnresolved]);
 
   const getTurmaOccurrences = () => {
     const turmaCounts = {};
@@ -149,7 +159,7 @@ export default function Dashboard() {
               </h3>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between">
+              <div className="flex justify-between space-x-2">
                 <select
                   className="border rounded p-2"
                   value={selectedYear || ""}
@@ -171,6 +181,7 @@ export default function Dashboard() {
                   ))}
                 </select>
               </div>
+
               <ul className="list-disc pl-5 mt-4">
                 {filteredOccurrences.length > 0 ? (
                   filteredOccurrences.map((o) => (
@@ -194,7 +205,7 @@ export default function Dashboard() {
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <h3 className="font-semibold text-lg">Estatísticas</h3>
+                  <h3 className="font-semibold text-lg">Métricas</h3>
                 </div>
               </CardHeader>
               <CardContent>
@@ -214,7 +225,7 @@ export default function Dashboard() {
                 <h3 className="font-semibold text-lg">Acesso Rápido</h3>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Button onClick={() => setIsAddModalOpen(true)}>
                     Adicionar Ocorrência
                   </Button>
@@ -227,9 +238,6 @@ export default function Dashboard() {
                     <>
                       <Button asChild>
                         <Link href="/db">Gerenciar Dados</Link>
-                      </Button>
-                      <Button asChild>
-                        <Link href="/sugestions">Gerenciar Sugestões</Link>
                       </Button>
                     </>
                   )}

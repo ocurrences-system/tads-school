@@ -27,27 +27,40 @@ model Funcao {
   usuarios    User[]
 }
 
+model Student {
+  id              String              @id @default(cuid())
+  nome            String
+  email           String              @unique
+  emailP          String?
+  tel             String?
+  telP            String?
+  turmaId         String?
+  turma           Turma?              @relation(fields: [turmaId], references: [id])
+  data_nascimento DateTime
+  occurrences     Occurrence[]
+  tipoCounter     TipoCounter[]
+  fotoPath        String?
+  fotoHash        String?             
+  turmaHistory    StudentTurmaHistory[]
+}
+
 model Turma {
   id     String    @id @default(cuid())
   nome   String
   ano    Int
   alunos Student[]
+  turmaHistory StudentTurmaHistory[]
   @@unique([nome, ano])
 }
 
-model Student {
-  id              String        @id @default(cuid())
-  nome            String
-  email           String        @unique
-  emailP          String?
-  tel             String?
-  telP            String?
-  turmaId         String
-  turma           Turma         @relation(fields: [turmaId], references: [id])
-  data_nascimento DateTime
-  occurrences     Occurrence[]
-  tipoCounter     TipoCounter[]
-  fotoPath        String?       // Caminho para o arquivo da foto no servidor
+model StudentTurmaHistory {
+  id        String   @id @default(cuid())
+  studentId String
+  turmaId   String
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  student   Student @relation(fields: [studentId], references: [id])
+  turma     Turma   @relation(fields: [turmaId], references: [id])
 }
 
 model Occurrence {

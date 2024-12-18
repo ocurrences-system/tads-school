@@ -7,6 +7,7 @@ async function main() {
   // Limpa os dados existentes
   await prisma.tipoCounter.deleteMany();
   await prisma.occurrence.deleteMany();
+  await prisma.studentTurmaHistory.deleteMany();
   await prisma.student.deleteMany();
   await prisma.turma.deleteMany();
   await prisma.tipo.deleteMany();
@@ -91,6 +92,23 @@ async function main() {
 
   console.log("Alunos criados manualmente.");
 
+  // Cria um histórico inicial de turma para cada aluno
+  const alunos = await prisma.student.findMany({ select: { id: true, turmaId: true }});
+  const studentTurmaHistoryData = alunos
+    .filter(a => a.turmaId !== null) // Considera apenas alunos com turma atual definida
+    .map(a => ({
+      studentId: a.id,
+      turmaId: a.turmaId!,
+      startDate: new Date(),
+      endDate: null
+    }));
+
+  await prisma.studentTurmaHistory.createMany({
+    data: studentTurmaHistoryData
+  });
+  
+  console.log("Histórico de turmas criado para cada aluno.");
+
   // Criação de tipos de ocorrência
   const tipo1 = await prisma.tipo.create({ data: { id: "1", nome: "Indisciplina Nível 1", gravidade: 1 } });
   const tipo2 = await prisma.tipo.create({ data: { id: "2", nome: "Indisciplina Nível 2", gravidade: 2 } });
@@ -138,8 +156,7 @@ async function main() {
 
   console.log("Ocorrências criadas manualmente.");
 
-  // Agora criaremos os tipoCounter a partir das ocorrências criadas acima.
-  // Mapeia quantas vezes cada (alunoId,tipoId) aparece
+  // Agora criaremos os tipoCounter a partir das ocorrências criadas
   const occurrenceCountByType: Record<string, number> = {};
   for (const occ of occurrencesData) {
     const key = `${occ.alunoId}_${occ.tipoId}`;
@@ -151,7 +168,6 @@ async function main() {
     return { alunoId, tipoId, count };
   });
 
-  // Cria em massa os registros de tipoCounter
   await prisma.tipoCounter.createMany({
     data: tipoCounterData
   });
