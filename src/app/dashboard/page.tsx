@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [showUnresolved, setShowUnresolved] = useState(true);
 
   const { data: session, status } = useSession();
+  //console.log("Sessão atual:", session);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -232,9 +233,7 @@ export default function Dashboard() {
                   <Button asChild>
                     <Link href="/profiles/student">Gerenciar Alunos</Link>
                   </Button>
-
-                  {/* Somente exibe se o poder >= 75 */}
-                  {session?.user?.poder >= 75 && (
+                  {session?.user?.role === 'Administrador' && (
                     <>
                       <Button asChild>
                         <Link href="/db">Gerenciar Dados</Link>

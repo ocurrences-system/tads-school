@@ -23,7 +23,6 @@ model User {
 model Funcao {
   id          String  @id @default(cuid())
   nome        String  @unique
-  poder       Int     @default(1) // Validação deve ser tratada na aplicação
   usuarios    User[]
 }
 

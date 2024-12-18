@@ -18,10 +18,10 @@ async function main() {
 
   // Criação de funções
   const adminFuncao = await prisma.funcao.create({
-    data: { id: "1", nome: "Administrador", poder: 75 },
+    data: { id: "1", nome: "Administrador"},
   });
   const pedagogaFuncao = await prisma.funcao.create({
-    data: { id: "2", nome: "Pedagoga", poder: 10 },
+    data: { id: "2", nome: "Pedagoga"},
   });
 
   console.log("Funções criadas:", [adminFuncao, pedagogaFuncao]);

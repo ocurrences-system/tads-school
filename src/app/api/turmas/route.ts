@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const turmas = await prisma.turma.findMany();
-    console.log("Turmas recebidas:", turmas);
+    //console.log("Turmas recebidas:", turmas);
     return NextResponse.json(turmas, { status: 200 });
   } catch (error) {
     console.error("Erro ao buscar turmas:", error);

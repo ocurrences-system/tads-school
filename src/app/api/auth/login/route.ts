@@ -8,12 +8,10 @@ export async function POST(req: Request) {
   try {
     const { email, senha } = await req.json();
 
-    // Busca o usuário pelo email no banco de dados
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    // Verifica se o usuário existe e a senha está correta
     if (!user || !(await bcrypt.compare(senha, user.senha))) {
       return NextResponse.json(
         { error: "Usuário ou senha inválidos." },
@@ -21,7 +19,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Remove a senha antes de retornar os dados do usuário
     const { senha: _, ...userData } = user;
 
     return NextResponse.json(userData);

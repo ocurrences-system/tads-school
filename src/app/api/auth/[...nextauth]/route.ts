@@ -29,8 +29,8 @@ const authOptions = {
             senha: true,
             funcao: {
               select: {
+                id: true,
                 nome: true,
-                poder: true,
               },
             },
             foto: true,
@@ -51,7 +51,6 @@ const authOptions = {
           name: user.nome,
           login: user.login,
           role: user.funcao.nome,
-          poder: user.funcao.poder,
           foto: user.foto,
         };
       },
@@ -68,7 +67,6 @@ const authOptions = {
         token.role = user.role;
         token.name = user.name;
         token.foto = user.foto;
-        token.poder = user.poder;  // Inclui poder no token
       }
       return token;
     },
@@ -79,7 +77,6 @@ const authOptions = {
         role: token.role,
         name: token.name,
         foto: token.foto,
-        poder: token.poder,  // Inclui poder na sessão
       };
       return session;
     },
